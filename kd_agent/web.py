@@ -8,28 +8,37 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
+from .llm import LLMError, chat, provider_status
 from .orchestrator import KDOrchestrator
 from .registry import IntegrationRegistry
 
 
 STATIC_DIR = Path(__file__).with_name("static")
+MAX_BODY_BYTES = 256_000
 
 
 class KDWebHandler(BaseHTTPRequestHandler):
     """Minimal dependency-free HTTP API and control-panel host."""
 
-    server_version = "KDAgent/0.1"
+    server_version = "KDAgent/0.2"
 
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
         if path == "/api/v1/health":
-            self._json(HTTPStatus.OK, {"service": "kd-agent-api", "status": "ok"})
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "service": "kd-agent-api",
+                    "status": "ok",
+                    "default_provider": provider_status()["default_provider"],
+                },
+            )
             return
-        if path == "/api/v1/integrations":
+        if path in {"/api/v1/integrations", "/api/status"}:
             self._json(HTTPStatus.OK, {"integrations": IntegrationRegistry().status()})
             return
-        if path == "/api/status":
-            self._json(HTTPStatus.OK, {"integrations": IntegrationRegistry().status()})
+        if path in {"/api/v1/providers", "/api/providers"}:
+            self._json(HTTPStatus.OK, provider_status())
             return
         if path == "/" or path == "/index.html":
             self._static("index.html")
@@ -40,14 +49,58 @@ class KDWebHandler(BaseHTTPRequestHandler):
         self._json(HTTPStatus.NOT_FOUND, {"error": "Route not found"})
 
     def do_POST(self) -> None:  # noqa: N802
-        if urlparse(self.path).path not in {"/api/plan", "/api/v1/plan"}:
-            self._json(HTTPStatus.NOT_FOUND, {"error": "Route not found"})
+        path = urlparse(self.path).path
+        if path in {"/api/plan", "/api/v1/plan"}:
+            self._handle_plan()
             return
+        if path in {"/api/chat", "/api/v1/chat"}:
+            self._handle_chat()
+            return
+        self._json(HTTPStatus.NOT_FOUND, {"error": "Route not found"})
+
+    def _read_json(self) -> dict[str, object]:
+        size = int(self.headers.get("Content-Length", "0"))
+        if size <= 0 or size > MAX_BODY_BYTES:
+            raise ValueError("Payload tidak valid atau terlalu besar.")
+        payload = json.loads(self.rfile.read(size))
+        if not isinstance(payload, dict):
+            raise ValueError("Payload harus berupa object JSON.")
+        return payload
+
+    def _handle_plan(self) -> None:
         try:
-            size = int(self.headers.get("Content-Length", "0"))
-            payload = json.loads(self.rfile.read(size))
+            payload = self._read_json()
             objective = payload.get("objective", "")
             result = KDOrchestrator().plan(objective).to_dict()
+        except (ValueError, json.JSONDecodeError, AttributeError) as error:
+            self._json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
+            return
+        self._json(HTTPStatus.OK, result)
+
+    def _handle_chat(self) -> None:
+        try:
+            payload = self._read_json()
+            prompt = payload.get("prompt", "")
+            provider = payload.get("provider")
+            model = payload.get("model")
+            history = payload.get("history", [])
+            if not isinstance(prompt, str):
+                raise ValueError("Prompt harus berupa teks.")
+            if provider is not None and not isinstance(provider, str):
+                raise ValueError("Provider tidak valid.")
+            if model is not None and not isinstance(model, str):
+                raise ValueError("Model tidak valid.")
+            if not isinstance(history, list):
+                history = []
+            result = chat(
+                prompt,
+                provider_name=provider,
+                model=model,
+                history=history,
+            )
+        except LLMError as error:
+            self._json(HTTPStatus.BAD_GATEWAY, {"error": str(error)})
+            return
         except (ValueError, json.JSONDecodeError, AttributeError) as error:
             self._json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
             return
@@ -61,7 +114,7 @@ class KDWebHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def _json(self, status: HTTPStatus, payload: object) -> None:
-        body = json.dumps(payload).encode("utf-8")
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self._cors_headers()
         self.send_header("Content-Type", "application/json; charset=utf-8")

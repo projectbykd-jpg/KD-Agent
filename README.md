@@ -8,6 +8,8 @@ It does not vendor, fork, or silently install the projects listed below. Their l
 
 The current baseline provides:
 
+- a provider-neutral AI chat layer with OpenAI, Groq, and OpenRouter support;
+- a modern AI workspace UI with provider/model selection and backend connection settings;
 - an integration registry covering all 15 requested projects;
 - deterministic task routing and dry-run plans;
 - environment-aware readiness reporting;
@@ -55,7 +57,9 @@ Every upstream project is catalogued and routed by capability. Before an adapter
 ```text
 GET /api/v1/health
 GET /api/v1/integrations
+GET /api/v1/providers
 POST /api/v1/plan
+POST /api/v1/chat
 ```
 
 Use [docs/BACKEND_SETUP.md](docs/BACKEND_SETUP.md) for the deployment and connector-activation guide.
@@ -69,7 +73,7 @@ User / API
             -> planning | data/RAG | memory | execution | media | learning adapters
 ```
 
-The orchestrator is deliberately **plan-only** at this stage. That means it cannot scrape, run code, deploy, access a private document, or write a memory entry until a dedicated adapter and approval policy are added.
+The orchestrator still keeps tool execution behind explicit adapters. The LLM chat endpoint is intentionally separate from external tool execution: it can answer and plan, but it does not silently execute repository, scraper, deployment, or memory actions.
 
 ## Integration catalogue
 
@@ -82,6 +86,10 @@ The orchestrator is deliberately **plan-only** at this stage. That means it cann
 | Media & learning | hyperframes, OpenMontage, AI Engineering Hub |
 
 Detailed upstream URLs live in `kd_agent/registry.py` so there is one auditable source of truth.
+
+## AI providers
+
+Set the primary provider with `AI_PROVIDER=openai`. The backend supports OpenAI (`gpt-5.6` by default), Groq (`openai/gpt-oss-120b` by default), and OpenRouter (`openrouter/auto` by default). Keep all API keys in the backend environment; never commit them to GitHub or expose them in the public panel.
 
 ## Configuration
 

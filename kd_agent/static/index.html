@@ -3,45 +3,77 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>KD Agent</title>
+    <meta name="description" content="KD Agent modern AI workspace">
+    <title>KD Agent — AI Workspace</title>
     <link rel="stylesheet" href="/static/styles.css">
   </head>
   <body>
-    <main class="shell">
-      <header>
-        <a class="brand" href="/" aria-label="KD Agent home"><span>KD</span> AGENT</a>
-        <p class="status"><i></i> Control plane online</p>
-      </header>
-
-      <section class="hero">
-        <p class="eyebrow">MODULAR AI WORKSPACE</p>
-        <h1>Rencanakan pekerjaan.<br><em>Eksekusi dengan sadar.</em></h1>
-        <p class="intro">Jelaskan tugas Anda. KD Agent akan memilih kapabilitas, menyusun langkah yang dapat diperiksa, dan menandai koneksi yang perlu dikonfigurasi.</p>
-      </section>
-
-      <section class="workspace" aria-label="KD Agent workspace">
-        <form id="task-form" class="composer">
-          <label for="objective">Apa yang ingin Anda kerjakan?</label>
-          <textarea id="objective" rows="5" placeholder="Contoh: Riset tren video AI dari web dan buat basis pengetahuan untuk tim saya." required></textarea>
-          <div class="composer-footer">
-            <span>Mode aman: hanya membuat rencana, belum menjalankan aksi eksternal.</span>
-            <button type="submit">Buat rencana <span aria-hidden="true">→</span></button>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand"><span class="brand-mark">KD</span><div><strong>KD Agent</strong><small>AI WORKSPACE</small></div></div>
+        <nav>
+          <a class="nav-item active" href="#chat">⌁ <span>Agent Chat</span></a>
+          <a class="nav-item" href="#providers">◈ <span>Providers</span></a>
+          <a class="nav-item" href="#plan-panel">✦ <span>Task Plan</span></a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="mini-status"><i id="connection-dot"></i><div><strong id="connection-text">Local mode</strong><small id="backend-text">Backend belum diatur</small></div></div>
+          <label class="field-label" for="api-base">Backend URL</label>
+          <div class="url-row"><input id="api-base" placeholder="https://....onrender.com" autocomplete="off"><button id="save-api" class="icon-btn" title="Simpan">✓</button></div>
+          <p class="security-note">API key hanya disimpan di backend. Panel tidak pernah meminta atau menampilkan secret.</p>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="topbar">
+          <div><p class="eyebrow">PERSONAL AI CONTROL PLANE</p><h1>KD Agent</h1></div>
+          <div class="top-controls">
+            <select id="provider" aria-label="AI provider">
+              <option value="openai">OpenAI</option>
+              <option value="groq">Groq</option>
+              <option value="openrouter">OpenRouter</option>
+            </select>
+            <input id="model" aria-label="AI model" value="gpt-5.6">
+            <span class="live-pill"><i id="live-dot"></i><span id="live-label">Ready</span></span>
           </div>
-        </form>
-
-        <section class="plan-card" aria-live="polite">
-          <div class="section-heading"><p class="eyebrow">AGENT PLAN</p><span id="plan-state">Menunggu instruksi</span></div>
-          <div id="plan-empty" class="empty-state">Rencana kerja Anda akan muncul di sini.</div>
-          <ol id="plan-steps" class="plan-steps" hidden></ol>
-          <div id="warnings" class="warnings" hidden></div>
+        </header>
+        <section id="chat" class="chat-layout">
+          <div class="chat-card">
+            <div id="chat-feed" class="chat-feed">
+              <div class="welcome">
+                <div class="orb">✦</div>
+                <p class="eyebrow">KD AGENT ONLINE</p>
+                <h2>Halo. Apa yang mau kita kerjakan?</h2>
+                <p>Pilih provider, tulis tugasmu, lalu biarkan KD Agent membantu memecahnya menjadi pekerjaan yang jelas dan bisa diperiksa.</p>
+                <div class="quick-actions">
+                  <button class="quick" data-prompt="Buat rencana untuk membangun website AI Agent modern.">Bangun AI Agent</button>
+                  <button class="quick" data-prompt="Analisis struktur project saya dan cari masalah utama yang perlu diperbaiki.">Audit project</button>
+                  <button class="quick" data-prompt="Buat roadmap coding 7 hari untuk menyelesaikan project ini.">Buat roadmap</button>
+                </div>
+              </div>
+            </div>
+            <form id="chat-form" class="composer">
+              <textarea id="prompt" rows="3" placeholder="Tulis instruksi untuk KD Agent…" required></textarea>
+              <div class="composer-bar">
+                <span><kbd>Enter</kbd> kirim · <kbd>Shift</kbd> + <kbd>Enter</kbd> baris baru</span>
+                <button id="send-btn" class="send-btn" type="submit"><span>Kirim</span> ↗</button>
+              </div>
+            </form>
+          </div>
+          <aside class="right-rail">
+            <section id="providers" class="panel-card">
+              <div class="panel-head"><div><p class="eyebrow">PROVIDERS</p><h3>AI Engine</h3></div><span id="provider-count">3</span></div>
+              <div id="provider-list" class="provider-list"></div>
+            </section>
+            <section id="plan-panel" class="panel-card">
+              <div class="panel-head"><div><p class="eyebrow">TASK PLAN</p><h3>Execution outline</h3></div><span id="plan-state">Idle</span></div>
+              <div id="plan-empty" class="plan-empty">Belum ada tugas.</div>
+              <ol id="plan-steps" class="plan-steps" hidden></ol>
+              <div id="warnings" class="warnings" hidden></div>
+            </section>
+          </aside>
         </section>
-      </section>
-
-      <section class="integrations">
-        <div class="section-heading"><p class="eyebrow">INTEGRATION READINESS</p><span id="integration-count">Memuat…</span></div>
-        <div id="integration-grid" class="integration-grid"></div>
-      </section>
-    </main>
+      </main>
+    </div>
     <script src="/static/app.js"></script>
   </body>
 </html>

@@ -7,6 +7,20 @@ services:
     startCommand: python -m kd_agent.cli serve --host 0.0.0.0
     healthCheckPath: /api/v1/health
     envVars:
+      - key: AI_PROVIDER
+        value: openai
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5.6
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: openrouter/auto
       - key: KD_AGENT_ALLOWED_ORIGIN
         value: https://projectbykd-jpg.github.io
       - key: PYTHON_VERSION
