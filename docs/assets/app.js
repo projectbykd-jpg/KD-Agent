@@ -32,7 +32,7 @@ let providers = [];
 
 function apiUrl(path) {
   const base = DEFAULT_BACKEND_URL.endsWith("/") ? DEFAULT_BACKEND_URL : DEFAULT_BACKEND_URL + "/";
-  return new URL(String(path || "").replace(/^\\/+/, ""), base).toString();
+  return new URL(String(path || "").replace(/^\/+/, ""), base).toString();
 }
 
 let backendOnline = false;
