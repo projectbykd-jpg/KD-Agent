@@ -21,7 +21,7 @@ services:
         sync: false
       - key: OPENROUTER_MODEL
         value: openrouter/auto
-      - key: KD_AGENT_ALLOWED_ORIGIN
-        value: https://projectbykd-jpg.github.io
+      - key: KD_AGENT_ALLOWED_ORIGINS
+        value: "https://projectbykd-jpg.github.io,https://kd-agent-panel.onrender.com"
       - key: PYTHON_VERSION
         value: 3.13.0
