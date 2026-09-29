@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kd-agent"
+version = "0.1.0"
+description = "A modular, provider-neutral personal AI agent platform."
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Project by KD"}]
+
+[project.scripts]
+kd-agent = "kd_agent.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["kd_agent*"]
