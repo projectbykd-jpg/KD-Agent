@@ -18,13 +18,15 @@ const planEmpty = $("#plan-empty");
 const planSteps = $("#plan-steps");
 const warnings = $("#warnings");
 
+const DEFAULT_BACKEND_URL = "https://kd-agent-api.onrender.com";
+
 let messages = [];
 let providers = [];
 
 function apiBase() {
   const stored = localStorage.getItem("kdAgentApiBase");
   const query = new URLSearchParams(location.search).get("api");
-  return (query || stored || "").replace(/\/$/, "");
+  return (query || stored || DEFAULT_BACKEND_URL).replace(/\/$/, "");
 }
 
 function apiUrl(path) {
