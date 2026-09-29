@@ -17,6 +17,13 @@ const planState = $("#plan-state");
 const planEmpty = $("#plan-empty");
 const planSteps = $("#plan-steps");
 const warnings = $("#warnings");
+const sidebar = $(".sidebar");
+const rightRail = $(".right-rail");
+const drawerBackdrop = $("#drawer-backdrop");
+const sidebarToggle = $("#sidebar-toggle");
+const toolsToggle = $("#tools-toggle");
+const sidebarClose = $("#sidebar-close");
+const toolsClose = $("#tools-close");
 
 const DEFAULT_BACKEND_URL = "https://kd-agent-api.onrender.com";
 
@@ -46,10 +53,12 @@ function addMessage(role, content, meta = "") {
   const empty = feed.querySelector(".welcome");
   if (empty) empty.remove();
   const wrapper = document.createElement("div");
-  wrapper.className = "message " + role;
+  const variant = meta === "KD Agent" && content.startsWith("Gagal menjalankan AI:") ? "error" : "";
+  wrapper.className = "message " + role + (variant ? " " + variant : "");
+  if (variant) wrapper.setAttribute("role", "alert");
   const avatar = document.createElement("div");
   avatar.className = "avatar";
-  avatar.textContent = role === "user" ? "YOU" : "KD";
+  avatar.textContent = role === "user" ? "YOU" : (variant ? "!" : "KD");
   const body = document.createElement("div");
   const bubble = document.createElement("div");
   bubble.className = "bubble";
@@ -273,6 +282,36 @@ promptInput.addEventListener("keydown", (event) => {
     event.preventDefault();
     form.requestSubmit();
   }
+});
+
+
+function closeDrawers() {
+  sidebar?.classList.remove("open");
+  rightRail?.classList.remove("open");
+  document.body.classList.remove("drawer-open");
+  if (drawerBackdrop) drawerBackdrop.hidden = true;
+}
+
+function openDrawer(target) {
+  if (!target) return;
+  sidebar?.classList.remove("open");
+  rightRail?.classList.remove("open");
+  target.classList.add("open");
+  document.body.classList.add("drawer-open");
+  if (drawerBackdrop) drawerBackdrop.hidden = false;
+}
+
+sidebarToggle?.addEventListener("click", () => openDrawer(sidebar));
+toolsToggle?.addEventListener("click", () => openDrawer(rightRail));
+sidebarClose?.addEventListener("click", closeDrawers);
+toolsClose?.addEventListener("click", closeDrawers);
+drawerBackdrop?.addEventListener("click", closeDrawers);
+document.querySelectorAll(".sidebar .nav-item").forEach((item) => {
+  item.addEventListener("click", () => closeDrawers());
+});
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 760) closeDrawers();
 });
 
 apiBaseInput.value = apiBase();
