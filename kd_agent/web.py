@@ -136,10 +136,18 @@ class KDWebHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _cors_headers(self) -> None:
-        configured_origin = os.getenv("KD_AGENT_ALLOWED_ORIGIN", "")
-        request_origin = self.headers.get("Origin", "")
-        if configured_origin and request_origin == configured_origin:
-            self.send_header("Access-Control-Allow-Origin", configured_origin)
+        configured_origins = (
+            os.getenv("KD_AGENT_ALLOWED_ORIGINS")
+            or os.getenv("KD_AGENT_ALLOWED_ORIGIN", "")
+        )
+        allowed_origins = {
+            value.strip().rstrip("/")
+            for value in configured_origins.replace("\n", ",").split(",")
+            if value.strip()
+        }
+        request_origin = self.headers.get("Origin", "").strip().rstrip("/")
+        if request_origin and request_origin in allowed_origins:
+            self.send_header("Access-Control-Allow-Origin", request_origin)
             self.send_header("Vary", "Origin")
 
     def log_message(self, format: str, *args: object) -> None:
