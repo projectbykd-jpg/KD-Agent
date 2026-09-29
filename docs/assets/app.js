@@ -29,9 +29,7 @@ let messages = [];
 let providers = [];
 
 function apiBase() {
-  const stored = localStorage.getItem("kdAgentApiBase");
-  const query = new URLSearchParams(location.search).get("api");
-  return (query || stored || DEFAULT_BACKEND_URL).replace(/\/$/, "");
+  return DEFAULT_BACKEND_URL;
 }
 
 function apiUrl(path) {
@@ -212,13 +210,6 @@ document.querySelectorAll(".quick").forEach((button) => {
     promptInput.value = button.dataset.prompt || "";
     promptInput.focus();
   });
-});
-
-saveApiBtn.addEventListener("click", async () => {
-  const value = apiBaseInput.value.trim().replace(/\/$/, "");
-  if (value) localStorage.setItem("kdAgentApiBase", value);
-  else localStorage.removeItem("kdAgentApiBase");
-  await loadProviders();
 });
 
 form.addEventListener("submit", async (event) => {
