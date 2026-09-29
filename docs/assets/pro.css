@@ -1,1 +1,10 @@
 .brand-mark img{display:block}.brand-mark{border-radius:14px}.topbar h1{font-weight:800}.chat-card,.panel-card{border-color:#243149;background:rgba(9,14,25,.86);box-shadow:0 24px 70px rgba(0,0,0,.34)}.panel-card{transition:transform .2s ease,border-color .2s ease}.panel-card:hover{border-color:#344463}.orb{width:78px;height:78px;border-radius:24px;padding:3px;background:linear-gradient(135deg,#8b5cf6,#22d3ee);box-shadow:0 18px 55px rgba(99,78,210,.28)}.orb img{display:block;width:100%;height:100%;object-fit:cover;border-radius:21px}.welcome h2{font-size:40px;letter-spacing:-.05em}.quick{background:linear-gradient(180deg,#121d31,#0d1524);border-color:#273650;box-shadow:0 8px 24px rgba(0,0,0,.14)}.quick:hover{border-color:#566987;background:#152139}.top-controls select,.top-controls input{border-color:#26354d;background:#0b1322}.send-btn{padding:10px 18px;border-radius:11px}.provider,.plan-empty{background:linear-gradient(180deg,#0d1626,#09111e)}.provider{border-color:#243149}.provider.active{border-color:#56449b;box-shadow:0 10px 28px rgba(78,61,160,.13)}.provider-action{border-color:#26354d}.live-pill{background:#0c1525;border-color:#28364e}.sidebar{background:rgba(4,7,13,.88)}.mini-status{background:linear-gradient(180deg,#0f1829,#0b1321)}.field-label{letter-spacing:.14em}.security-note{color:#66758c}
+/* Sidebar logo containment fix */
+.sidebar{overflow:hidden;min-width:0}
+.brand{width:100%;min-width:0;display:block;padding:6px 8px 22px;overflow:hidden}
+.brand-mark{width:100%;max-width:100%;height:68px;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none}
+.brand-mark img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;min-width:0;min-height:0;object-fit:contain;object-position:center}
+.brand>div{margin-top:9px;min-width:0}
+.sidebar nav{margin-top:2px;min-width:0}
+.nav-item{min-width:0}
+@media (max-width:760px){.brand{padding-bottom:18px}.brand-mark{height:64px}}
