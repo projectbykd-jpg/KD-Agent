@@ -28,6 +28,12 @@ py -m kd_agent.cli serve
 
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in a browser. The panel is intentionally local-only by default and is a safe planning interface: it creates inspectable plans but will not call third-party services or execute tools yet.
 
+If the `py` launcher is not available on Windows, use the installed Python executable directly:
+
+```powershell
+& "C:\Users\lacos\AppData\Local\Programs\Python\Python313\python.exe" -m kd_agent.cli serve
+```
+
 ## Architecture
 
 ```text
