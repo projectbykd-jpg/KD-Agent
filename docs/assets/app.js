@@ -6,8 +6,6 @@ const sendBtn = $("#send-btn");
 const providerSelect = $("#provider");
 const modelInput = $("#model");
 const providerList = $("#provider-list");
-const apiBaseInput = $("#api-base");
-const saveApiBtn = $("#save-api");
 const connectionDot = $("#connection-dot");
 const connectionText = $("#connection-text");
 const backendText = $("#backend-text");
@@ -171,16 +169,6 @@ function renderProviders() {
 }
 
 async function loadProviders() {
-  if (!apiBase()) {
-    providers = [
-      {id:"openai", name:"OpenAI", configured:false, model:"gpt-5.6", api_key_env:"OPENAI_API_KEY"},
-      {id:"groq", name:"Groq", configured:false, model:"openai/gpt-oss-120b", api_key_env:"GROQ_API_KEY"},
-      {id:"openrouter", name:"OpenRouter", configured:false, model:"openrouter/auto", api_key_env:"OPENROUTER_API_KEY"}
-    ];
-    renderProviders();
-    setConnection(false, "Static mode", "Belum terhubung ke backend");
-    return false;
-  }
   try {
     const response = await fetch(apiUrl("/api/v1/providers"));
     const data = await response.json();
@@ -246,13 +234,6 @@ form.addEventListener("submit", async (event) => {
   setThinking(true);
   await makePlan(prompt);
 
-  if (!apiBase()) {
-    setThinking(false);
-    addMessage("assistant", "Backend belum terhubung. Masukkan URL backend di kiri untuk menjalankan AI. Rencana lokal sudah dibuat di panel kanan.", "Local planner");
-    sendBtn.disabled = false;
-    return;
-  }
-
   try {
     const response = await fetch(apiUrl("/api/v1/chat"), {
       method:"POST",
@@ -311,5 +292,4 @@ window.addEventListener("resize", () => {
   if (window.innerWidth > 760) closeDrawers();
 });
 
-apiBaseInput.value = apiBase();
 loadProviders();
