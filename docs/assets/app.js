@@ -31,10 +31,95 @@ let messages = [];
 let providers = [];
 
 function apiUrl(path) {
-  return DEFAULT_BACKEND_URL + path;
+  const base = DEFAULT_BACKEND_URL.endsWith("/") ? DEFAULT_BACKEND_URL : DEFAULT_BACKEND_URL + "/";
+  return new URL(String(path || "").replace(/^\/+/, ""), base).toString();
+}
+
+let backendOnline = false;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchJson(path, options = {}, config = {}) {
+  const retries = Number.isInteger(config.retries) ? config.retries : 2;
+  const timeoutMs = Number.isInteger(config.timeoutMs) ? config.timeoutMs : 12000;
+  const url = apiUrl(path);
+  const method = options.method || "GET";
+
+  for (let attempt = 1; attempt <= retries + 1; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      console.debug("[KD Agent API] request", {
+        url,
+        method,
+        attempt,
+        frontendOrigin: window.location.origin,
+        online: navigator.onLine
+      });
+
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+
+      const raw = await response.text();
+      let data = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = { error: raw || response.statusText || "Respons backend bukan JSON." };
+      }
+
+      if (!response.ok) {
+        const error = new Error(data.error || `HTTP ${response.status} ${response.statusText}`);
+        error.status = response.status;
+        throw error;
+      }
+
+      backendOnline = true;
+      return data;
+    } catch (error) {
+      const isAbort = error?.name === "AbortError";
+      const status = Number(error?.status || 0);
+      const retryable = isAbort || !status || status >= 500 || status === 429;
+      const detail = isAbort
+        ? `Timeout setelah ${timeoutMs} ms`
+        : status
+          ? `HTTP ${status}: ${error.message}`
+          : `Network/CORS: ${error?.message || "Failed to fetch"}`;
+
+      console.error("[KD Agent API] request failed", {
+        url,
+        method,
+        attempt,
+        retries,
+        detail,
+        status: status || null,
+        frontendOrigin: window.location.origin,
+        backend: DEFAULT_BACKEND_URL,
+        online: navigator.onLine,
+        error
+      });
+
+      if (attempt > retries || !retryable) {
+        backendOnline = false;
+        throw new Error(detail);
+      }
+
+      await sleep(500 * 2 ** (attempt - 1));
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+
+  throw new Error("Request backend gagal.");
 }
 
 function setConnection(ok, label, detail) {
+  backendOnline = Boolean(ok);
   connectionDot.classList.toggle("good", Boolean(ok));
   liveDot.classList.toggle("good", Boolean(ok));
   connectionText.textContent = label;
@@ -96,7 +181,7 @@ function setThinking(active) {
   }
 }
 
-function localPlan(objective) {
+function localPlan(objective, warning = "") {
   const text = objective.toLowerCase();
   const rules = [
     ["documents", ["pdf", "document", "dokumen", "file"], "Uraikan dan strukturkan dokumen yang diberikan."],
@@ -121,7 +206,11 @@ function localPlan(objective) {
   return {
     objective,
     steps,
-    warnings:["Backend plan belum merespons. Menampilkan rencana lokal."]
+    warnings:[
+      warning
+        ? `Backend plan belum merespons: ${warning}`
+        : "Backend plan belum merespons. Menampilkan rencana lokal."
+    ]
   };
 }
 
@@ -212,12 +301,9 @@ function renderProviders() {
 
 async function loadProviders() {
   try {
-    const response = await fetch(apiUrl("/api/v1/providers"), {headers:{"Accept":"application/json"}});
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Provider endpoint gagal.");
-    }
+    const data = await fetchJson("/api/v1/providers", {
+      headers:{"Accept":"application/json"}
+    });
 
     providers = Array.isArray(data.providers) ? data.providers : [];
 
@@ -259,8 +345,9 @@ async function makePlan(objective) {
     }
 
     renderPlan(data);
-  } catch {
-    renderPlan(localPlan(objective));
+  } catch (error) {
+    console.warn("[KD Agent Plan] backend unavailable; using local plan", error);
+    renderPlan(localPlan(objective, error.message));
   }
 }
 
@@ -321,7 +408,7 @@ form?.addEventListener("submit", async (event) => {
   await makePlan(prompt);
 
   try {
-    const response = await fetch(apiUrl("/api/v1/chat"), {
+    const data = await fetchJson("/api/v1/chat", {
       method:"POST",
       headers:{"Content-Type":"application/json","Accept":"application/json"},
       body:JSON.stringify({
@@ -331,12 +418,6 @@ form?.addEventListener("submit", async (event) => {
         history:messages.slice(0, -1).slice(-20)
       })
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "AI request gagal.");
-    }
 
     setThinking(false);
     const answer = data.content || "Provider tidak mengembalikan isi jawaban.";
@@ -362,5 +443,15 @@ promptInput?.addEventListener("keydown", (event) => {
 window.addEventListener("resize", () => {
   if (window.innerWidth > 860) closeDrawers();
 });
+
+window.addEventListener("online", () => {
+  loadProviders();
+});
+
+window.setInterval(() => {
+  if (!backendOnline) {
+    loadProviders();
+  }
+}, 30000);
 
 loadProviders();
