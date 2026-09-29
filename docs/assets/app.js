@@ -1,70 +1,274 @@
-const integrations = [
-  ["Hermes Agent", "Planning", "Otak agent dan pengalaman multi-platform", "https://github.com/NousResearch/hermes-agent"],
-  ["OpenSpec", "Planning", "Spec-driven development", "https://github.com/Fission-AI/OpenSpec"],
-  ["spec-kit", "Planning", "Toolkit spesifikasi", "https://github.com/github/spec-kit"],
-  ["Fabric", "Planning", "Framework prompt modular", "https://github.com/danielmiessler/Fabric"],
-  ["Docling", "Documents", "Konversi dokumen dan PDF", "https://github.com/docling-project/docling"],
-  ["Scrapling", "Web research", "Web scraping adaptif", "https://github.com/D4Vinci/Scrapling"],
-  ["PageIndex", "Knowledge", "RAG berbasis struktur dokumen", "https://github.com/VectifyAI/PageIndex"],
-  ["mem0", "Memory", "Memori agent jangka panjang", "https://github.com/mem0ai/mem0"],
-  ["headroom", "Memory", "Kompresi konteks JSON", "https://github.com/headroomlabs-ai/headroom"],
-  ["caveman", "Memory", "Efisiensi token", "https://github.com/JuliusBrussee/caveman"],
-  ["Daytona", "Execution", "Sandbox eksekusi aman", "https://github.com/daytonaio/daytona"],
-  ["TrendRadar", "Trends", "Pemantau tren multi-platform", "https://github.com/sansan0/TrendRadar"],
-  ["hyperframes", "Media", "HTML ke video untuk agent", "https://github.com/heygen-com/hyperframes"],
-  ["OpenMontage", "Media", "Studio produksi video agentic", "https://github.com/calesthio/OpenMontage"],
-  ["AI Engineering Hub", "Learning", "Referensi LLM dan RAG", "https://github.com/patchy631/ai-engineering-hub"],
-].map(([name, capability, description, url]) => ({ name, capability, description, url }));
+const $ = (selector) => document.querySelector(selector);
+const form = $("#chat-form");
+const promptInput = $("#prompt");
+const feed = $("#chat-feed");
+const sendBtn = $("#send-btn");
+const providerSelect = $("#provider");
+const modelInput = $("#model");
+const providerList = $("#provider-list");
+const apiBaseInput = $("#api-base");
+const saveApiBtn = $("#save-api");
+const connectionDot = $("#connection-dot");
+const connectionText = $("#connection-text");
+const backendText = $("#backend-text");
+const liveDot = $("#live-dot");
+const liveLabel = $("#live-label");
+const planState = $("#plan-state");
+const planEmpty = $("#plan-empty");
+const planSteps = $("#plan-steps");
+const warnings = $("#warnings");
 
-const routes = [
-  { capability: "Planning", action: "Pecah tujuan menjadi langkah yang bisa diverifikasi.", terms: [] },
-  { capability: "Documents", action: "Strukturkan dokumen atau PDF yang diberikan.", terms: ["pdf", "dokumen", "document", "file"] },
-  { capability: "Web research", action: "Rencanakan pengumpulan materi web publik dengan kebijakan yang jelas.", terms: ["web", "website", "riset", "research", "scrape"] },
-  { capability: "Knowledge", action: "Rencanakan pembaruan atau pencarian basis pengetahuan.", terms: ["rag", "knowledge", "knowledge base", "basis pengetahuan"] },
-  { capability: "Memory", action: "Tentukan konteks jangka panjang yang perlu diingat dengan persetujuan pengguna.", terms: ["memory", "memori", "ingat", "remember"] },
-  { capability: "Trends", action: "Kumpulkan dan bandingkan sinyal tren.", terms: ["trend", "tren", "trending"] },
-  { capability: "Media", action: "Susun produksi konten atau video.", terms: ["video", "media", "montage"] },
-  { capability: "Execution", action: "Siapkan permintaan eksekusi pada lingkungan terisolasi.", terms: ["run", "jalankan", "execute", "deploy"] },
-  { capability: "Learning", action: "Rujuk pola engineering untuk meningkatkan solusi.", terms: ["belajar", "learn", "engineering"] },
-];
+let messages = [];
+let providers = [];
 
-const byId = (id) => document.getElementById(id);
-const titleCase = (value) => value.replace(/\b\w/g, (letter) => letter.toUpperCase());
-
-function renderCatalogue() {
-  const grid = byId("integration-grid");
-  integrations.forEach((integration) => {
-    const card = document.createElement("article");
-    card.className = "integration-card";
-    card.innerHTML = `<p class="capability">${integration.capability}</p><h3>${integration.name}</h3><p>${integration.description}</p><a href="${integration.url}" target="_blank" rel="noreferrer">Buka repositori <span>↗</span></a>`;
-    grid.append(card);
-  });
-  byId("integration-count").textContent = `${integrations.length} repositori terhubung`;
+function apiBase() {
+  const stored = localStorage.getItem("kdAgentApiBase");
+  const query = new URLSearchParams(location.search).get("api");
+  return (query || stored || "").replace(/\/$/, "");
 }
 
-function renderPlan(objective) {
-  const normalized = objective.toLocaleLowerCase();
-  const selected = routes.filter((route, index) => index === 0 || route.terms.some((term) => normalized.includes(term)));
-  const steps = byId("plan-steps");
-  steps.replaceChildren();
-  selected.forEach((route, index) => {
-    const supporting = integrations.filter((item) => item.capability === route.capability);
+function apiUrl(path) {
+  const base = apiBase();
+  return base ? base + path : path;
+}
+
+function setConnection(ok, label, detail) {
+  connectionDot.className = ok ? "good" : "";
+  liveDot.className = ok ? "good" : "";
+  connectionText.textContent = label;
+  backendText.textContent = detail;
+  liveLabel.textContent = ok ? "Connected" : "Local";
+}
+
+function addMessage(role, content, meta = "") {
+  const empty = feed.querySelector(".welcome");
+  if (empty) empty.remove();
+  const wrapper = document.createElement("div");
+  wrapper.className = "message " + role;
+  const avatar = document.createElement("div");
+  avatar.className = "avatar";
+  avatar.textContent = role === "user" ? "YOU" : "KD";
+  const body = document.createElement("div");
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = content;
+  const time = document.createElement("div");
+  time.className = "meta";
+  time.textContent = meta || (role === "user" ? "You" : "KD Agent");
+  body.append(bubble, time);
+  wrapper.append(avatar, body);
+  feed.append(wrapper);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function setThinking(active) {
+  const existing = feed.querySelector(".thinking");
+  if (active && !existing) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "message assistant thinking";
+    wrapper.innerHTML = '<div class="avatar">KD</div><div><div class="bubble">Sedang berpikir…</div><div class="meta">AI engine</div></div>';
+    feed.append(wrapper);
+    feed.scrollTop = feed.scrollHeight;
+  } else if (!active && existing) {
+    existing.remove();
+  }
+}
+
+function localPlan(objective) {
+  const text = objective.toLowerCase();
+  const rules = [
+    ["documents", ["pdf", "document", "dokumen", "file"], "Uraikan dan strukturkan dokumen yang diberikan."],
+    ["web research", ["web", "website", "research", "riset", "scrape"], "Kumpulkan materi web publik sesuai kebutuhan."],
+    ["knowledge", ["knowledge", "rag", "basis pengetahuan"], "Susun atau perbarui basis pengetahuan."],
+    ["memory", ["memory", "memori", "ingat"], "Identifikasi konteks yang layak dipertahankan."],
+    ["trends", ["trend", "trending", "tren"], "Kumpulkan dan ringkas sinyal tren."],
+    ["media", ["video", "media", "montage"], "Susun alur kerja produksi media."],
+    ["execution", ["run", "execute", "deploy", "jalankan"], "Siapkan langkah eksekusi yang terisolasi."]
+  ];
+  const steps = [{capability:"planning", action:"Pecah tujuan menjadi langkah yang dapat diperiksa.", integration:null}];
+  for (const rule of rules) {
+    if (rule[1].some((word) => text.includes(word))) {
+      steps.push({capability:rule[0], action:rule[2], integration:null});
+    }
+  }
+  return {objective, steps, warnings:["Mode browser: rencana lokal. Hubungkan backend untuk AI dan readiness provider."]};
+}
+
+function renderPlan(plan) {
+  planSteps.replaceChildren();
+  plan.steps.forEach((step, index) => {
     const item = document.createElement("li");
     item.className = "plan-step";
-    item.innerHTML = `<span class="step-number">${String(index + 1).padStart(2, "0")}</span><div><strong>${route.capability}</strong><p>${route.action}</p><div class="links">${supporting.map((tool) => `<a href="${tool.url}" target="_blank" rel="noreferrer">${tool.name}</a>`).join("")}</div></div>`;
-    steps.append(item);
+    const num = document.createElement("span");
+    num.className = "step-num";
+    num.textContent = String(index + 1).padStart(2, "0");
+    const copy = document.createElement("div");
+    copy.className = "step-copy";
+    const strong = document.createElement("strong");
+    strong.textContent = step.capability.replaceAll("_", " ");
+    const p = document.createElement("p");
+    p.textContent = step.action;
+    copy.append(strong, p);
+    item.append(num, copy);
+    planSteps.append(item);
   });
-  byId("plan-empty").hidden = true;
-  steps.hidden = false;
-  byId("plan-state").textContent = `${selected.length} langkah dibuat`;
-  const warnings = byId("warnings");
-  warnings.textContent = "Langkah ini adalah rencana. Aktifkan adapter backend untuk menjalankan integrasi secara nyata.";
-  warnings.hidden = false;
+  planEmpty.hidden = true;
+  planSteps.hidden = false;
+  planState.textContent = plan.steps.length + " langkah";
+  warnings.replaceChildren(...(plan.warnings || []).map((warning) => {
+    const p = document.createElement("p");
+    p.textContent = warning;
+    return p;
+  }));
+  warnings.hidden = !(plan.warnings || []).length;
 }
 
-byId("task-form").addEventListener("submit", (event) => {
-  event.preventDefault();
-  renderPlan(byId("objective").value.trim());
+function renderProviders() {
+  providerList.replaceChildren();
+  providers.forEach((item) => {
+    const card = document.createElement("div");
+    card.className = "provider" + (item.id === providerSelect.value ? " active" : "");
+    const top = document.createElement("div");
+    top.className = "provider-top";
+    const name = document.createElement("div");
+    name.className = "provider-name";
+    const dot = document.createElement("span");
+    dot.className = "provider-dot" + (item.configured ? " good" : "");
+    const title = document.createElement("span");
+    title.textContent = item.name;
+    name.append(dot, title);
+    const status = document.createElement("span");
+    status.textContent = item.configured ? "READY" : "OFF";
+    status.style.color = item.configured ? "#4ade80" : "#69768c";
+    status.style.fontSize = "9px";
+    status.style.fontWeight = "800";
+    top.append(name, status);
+    const model = document.createElement("small");
+    model.textContent = item.configured ? item.model : "Isi " + item.api_key_env + " di backend";
+    const action = document.createElement("button");
+    action.className = "provider-action";
+    action.textContent = item.id === providerSelect.value ? "Dipilih" : "Pakai provider ini";
+    action.disabled = item.id === providerSelect.value;
+    action.addEventListener("click", () => {
+      providerSelect.value = item.id;
+      modelInput.value = item.model;
+      renderProviders();
+    });
+    card.append(top, model, action);
+    providerList.append(card);
+  });
+}
+
+async function loadProviders() {
+  if (!apiBase()) {
+    providers = [
+      {id:"openai", name:"OpenAI", configured:false, model:"gpt-5.6", api_key_env:"OPENAI_API_KEY"},
+      {id:"groq", name:"Groq", configured:false, model:"openai/gpt-oss-120b", api_key_env:"GROQ_API_KEY"},
+      {id:"openrouter", name:"OpenRouter", configured:false, model:"openrouter/auto", api_key_env:"OPENROUTER_API_KEY"}
+    ];
+    renderProviders();
+    setConnection(false, "Static mode", "Belum terhubung ke backend");
+    return false;
+  }
+  try {
+    const response = await fetch(apiUrl("/api/v1/providers"));
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Provider endpoint gagal.");
+    providers = data.providers || [];
+    providerSelect.value = data.default_provider || "openai";
+    const selected = providers.find((item) => item.id === providerSelect.value);
+    modelInput.value = selected?.model || "gpt-5.6";
+    renderProviders();
+    setConnection(true, "Backend online", providers.filter((item) => item.configured).length + "/3 provider siap");
+    return true;
+  } catch (error) {
+    setConnection(false, "Backend error", error.message);
+    return false;
+  }
+}
+
+async function makePlan(text) {
+  planState.textContent = "Menyusun…";
+  try {
+    const response = await fetch(apiUrl("/api/v1/plan"), {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({objective:text})
+    });
+    if (!response.ok) throw new Error("Backend plan gagal");
+    renderPlan(await response.json());
+  } catch {
+    renderPlan(localPlan(text));
+  }
+}
+
+providerSelect.addEventListener("change", () => {
+  const provider = providers.find((item) => item.id === providerSelect.value);
+  modelInput.value = provider?.model || modelInput.value;
+  renderProviders();
 });
 
-renderCatalogue();
+document.querySelectorAll(".quick").forEach((button) => {
+  button.addEventListener("click", () => {
+    promptInput.value = button.dataset.prompt || "";
+    promptInput.focus();
+  });
+});
+
+saveApiBtn.addEventListener("click", async () => {
+  const value = apiBaseInput.value.trim().replace(/\/$/, "");
+  if (value) localStorage.setItem("kdAgentApiBase", value);
+  else localStorage.removeItem("kdAgentApiBase");
+  await loadProviders();
+});
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const prompt = promptInput.value.trim();
+  if (!prompt) return;
+  const selected = providerSelect.value;
+  const model = modelInput.value.trim();
+  addMessage("user", prompt);
+  messages.push({role:"user", content:prompt});
+  promptInput.value = "";
+  sendBtn.disabled = true;
+  setThinking(true);
+  await makePlan(prompt);
+
+  if (!apiBase()) {
+    setThinking(false);
+    addMessage("assistant", "Backend belum terhubung. Masukkan URL backend di kiri untuk menjalankan AI. Rencana lokal sudah dibuat di panel kanan.", "Local planner");
+    sendBtn.disabled = false;
+    return;
+  }
+
+  try {
+    const response = await fetch(apiUrl("/api/v1/chat"), {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({prompt, provider:selected, model, history:messages.slice(-20)})
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "AI request gagal.");
+    setThinking(false);
+    addMessage("assistant", data.content || "Provider tidak mengembalikan isi jawaban.", data.provider_name + " · " + data.model);
+    messages.push({role:"assistant", content:data.content || ""});
+    setConnection(true, "Backend online", data.provider_name + " · " + data.model);
+  } catch (error) {
+    setThinking(false);
+    addMessage("assistant", "Gagal menjalankan AI: " + error.message, "KD Agent");
+    setConnection(false, "Backend error", "Cek URL dan API key provider");
+  } finally {
+    sendBtn.disabled = false;
+  }
+});
+
+promptInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    form.requestSubmit();
+  }
+});
+
+apiBaseInput.value = apiBase();
+loadProviders();
