@@ -15,7 +15,7 @@
     <div class="app-shell">
       <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
       <aside class="sidebar">
-        <button id="sidebar-close" class="drawer-close" type="button" aria-label="Tutup menu">×</button>
+        <button id="sidebar-close" class="drawer-close" type="button" aria-label="Tutup menu"><span aria-hidden="true">×</span></button>
         <div class="brand"><span class="brand-mark"><img src="https://i.ibb.co/DNGhtS0/image.png" alt="KD Agent logo"></span><div><strong>KD Agent</strong><small>AI WORKSPACE</small></div></div>
         <nav>
           <a class="nav-item active" href="#chat">⌁ <span>Agent Chat</span></a>
@@ -23,10 +23,8 @@
           <a class="nav-item" href="#plan-panel">✦ <span>Task Plan</span></a>
         </nav>
         <div class="sidebar-bottom">
-          <div class="mini-status"><i id="connection-dot"></i><div><strong id="connection-text">Local mode</strong><small id="backend-text">Backend belum diatur</small></div></div>
-          <label class="field-label" for="api-base">Backend URL</label>
-          <div class="url-row"><input id="api-base" placeholder="https://....onrender.com" autocomplete="off"><button id="save-api" class="icon-btn" title="Simpan">✓</button></div>
-          <p class="security-note">API key hanya disimpan di backend. Panel tidak pernah meminta atau menampilkan secret.</p>
+          <div class="mini-status"><i id="connection-dot"></i><div><strong id="connection-text">Backend ready</strong><small id="backend-text">AI service dikelola otomatis</small></div></div>
+          <p class="security-note">API key dan endpoint dikelola di backend. Tidak ada secret di panel.</p>
         </div>
       </aside>
       <main class="main">
