@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 
 from .orchestrator import KDOrchestrator
 from .registry import IntegrationRegistry
@@ -15,8 +16,8 @@ def main() -> None:
     plan = commands.add_parser("plan", help="Create an execution plan without running tools")
     plan.add_argument("objective", help="Task to plan")
     serve = commands.add_parser("serve", help="Start the local KD Agent web panel")
-    serve.add_argument("--host", default="127.0.0.1", help="Bind address (default: 127.0.0.1)")
-    serve.add_argument("--port", default=8000, type=int, help="Port number (default: 8000)")
+    serve.add_argument("--host", default=os.getenv("KD_AGENT_HOST", "127.0.0.1"), help="Bind address")
+    serve.add_argument("--port", default=int(os.getenv("PORT", "8000")), type=int, help="Port number")
     args = parser.parse_args()
 
     if args.command == "status":

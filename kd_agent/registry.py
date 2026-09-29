@@ -20,16 +20,35 @@ class IntegrationRegistry:
 
     def configured_for(self, capability: Capability) -> Integration | None:
         for item in self.for_capability(capability):
-            if item.enabled and all(os.getenv(key) for key in item.required_environment):
+            if self._is_enabled(item) and all(os.getenv(key) for key in item.required_environment):
                 return item
         return None
+
+    @staticmethod
+    def _is_enabled(item: Integration) -> bool:
+        """Enable connectors only through an explicit environment setting."""
+        key = "KD_AGENT_ENABLE_" + "".join(
+            character if character.isalnum() else "_" for character in item.name.upper()
+        )
+        return item.enabled or os.getenv(key, "").casefold() in {"1", "true", "yes"}
 
     def status(self) -> dict[str, list[dict[str, object]]]:
         result: dict[str, list[dict[str, object]]] = defaultdict(list)
         for item in self._integrations:
             missing = [key for key in item.required_environment if not os.getenv(key)]
+            enabled = self._is_enabled(item)
             result[item.capability.value].append(
-                {"name": item.name, "enabled": item.enabled, "missing_environment": missing}
+                {
+                    "name": item.name,
+                    "repository": item.repository,
+                    "enabled": enabled,
+                    "ready": enabled and not missing,
+                    "missing_environment": missing,
+                    "enable_variable": "KD_AGENT_ENABLE_" + "".join(
+                        character if character.isalnum() else "_" for character in item.name.upper()
+                    ),
+                    "note": item.note,
+                }
             )
         return dict(result)
 

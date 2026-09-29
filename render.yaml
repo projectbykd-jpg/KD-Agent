@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: kd-agent-api
+    runtime: python
+    plan: free
+    buildCommand: python -m pip install .
+    startCommand: python -m kd_agent.cli serve --host 0.0.0.0
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: KD_AGENT_ALLOWED_ORIGIN
+        value: https://projectbykd-jpg.github.io
+      - key: PYTHON_VERSION
+        value: 3.13.0

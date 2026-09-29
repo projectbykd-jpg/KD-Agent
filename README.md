@@ -48,6 +48,18 @@ GitHub Pages (public UI) -> authenticated API/backend -> approved integration ad
 
 Every upstream project is catalogued and routed by capability. Before an adapter is enabled in production, review its licence, deployment requirements, and credentials; the page itself never treats a repository link as an installed or authorized integration.
 
+## Deploy the private backend
+
+`render.yaml` deploys the API as a Render Blueprint. The backend keeps credentials off GitHub Pages and exposes health/readiness endpoints:
+
+```text
+GET /api/v1/health
+GET /api/v1/integrations
+POST /api/v1/plan
+```
+
+Use [docs/BACKEND_SETUP.md](docs/BACKEND_SETUP.md) for the deployment and connector-activation guide.
+
 ## Architecture
 
 ```text
