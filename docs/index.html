@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="KD Agent public planning dashboard">
+    <title>KD Agent — Public Control Panel</title>
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <a class="brand" href="./"><span>KD</span> AGENT</a>
+        <span class="pill"><i></i> GitHub Pages · Static mode</span>
+      </header>
+
+      <section class="hero">
+        <p class="eyebrow">PUBLIC AI AGENT WORKSPACE</p>
+        <h1>Think in systems.<br><em>Move with intent.</em></h1>
+        <p>Versi publik KD Agent untuk menyusun rencana kerja dan menjelajahi 15 integrasi open-source yang membentuk arsitektur agent.</p>
+      </section>
+
+      <section class="notice">
+        <strong>Mode aman.</strong> Halaman ini berjalan seluruhnya di browser dan tidak mengirim instruksi, dokumen, atau API key ke server. Integrasi nyata diaktifkan melalui backend privat setelah adapter dan kredensial dikonfigurasi.
+      </section>
+
+      <section class="workspace">
+        <form id="task-form" class="composer">
+          <label for="objective">Apa yang ingin Anda rencanakan?</label>
+          <textarea id="objective" rows="5" placeholder="Contoh: Riset tren video AI dari web dan buat basis pengetahuan untuk tim saya." required></textarea>
+          <div class="composer-footer">
+            <span>Perencanaan lokal — tanpa aksi eksternal.</span>
+            <button type="submit">Buat rencana <span aria-hidden="true">→</span></button>
+          </div>
+        </form>
+        <section class="plan-card" aria-live="polite">
+          <div class="section-heading"><p class="eyebrow">AGENT PLAN</p><span id="plan-state">Menunggu instruksi</span></div>
+          <div id="plan-empty" class="empty-state">Rencana yang dapat diperiksa akan muncul di sini.</div>
+          <ol id="plan-steps" class="plan-steps" hidden></ol>
+          <div id="warnings" class="warnings" hidden></div>
+        </section>
+      </section>
+
+      <section class="catalogue">
+        <div class="section-heading"><div><p class="eyebrow">INTEGRATION CATALOGUE</p><h2>15 repositori, satu arsitektur modular.</h2></div><span id="integration-count"></span></div>
+        <div id="integration-grid" class="integration-grid"></div>
+      </section>
+    </main>
+    <script src="assets/app.js"></script>
+  </body>
+</html>

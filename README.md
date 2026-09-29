@@ -34,6 +34,20 @@ If the `py` launcher is not available on Windows, use the installed Python execu
 & "C:\Users\lacos\AppData\Local\Programs\Python\Python313\python.exe" -m kd_agent.cli serve
 ```
 
+## Public GitHub Pages panel
+
+The repository publishes a static, privacy-preserving planning panel to GitHub Pages through `.github/workflows/deploy-pages.yml`. After the deployment workflow completes, it is available at:
+
+`https://projectbykd-jpg.github.io/KD-Agent/`
+
+The public panel includes active links for all 15 upstream projects and can make plans locally in the browser. GitHub Pages cannot securely host API keys or run Python adapters, so it is not the execution backend. The production architecture is:
+
+```text
+GitHub Pages (public UI) -> authenticated API/backend -> approved integration adapters -> upstream services
+```
+
+Every upstream project is catalogued and routed by capability. Before an adapter is enabled in production, review its licence, deployment requirements, and credentials; the page itself never treats a repository link as an installed or authorized integration.
+
 ## Architecture
 
 ```text
