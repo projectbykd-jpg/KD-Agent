@@ -246,7 +246,7 @@ form.addEventListener("submit", async (event) => {
     const response = await fetch(apiUrl("/api/v1/chat"), {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({prompt, provider:selected, model, history:messages.slice(-20)})
+      body:JSON.stringify({prompt, provider:selected, model, history:messages.slice(0,-1).slice(-20)})
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "AI request gagal.");
