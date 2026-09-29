@@ -78,7 +78,7 @@ svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke
 .quick{border:1px solid var(--line);border-radius:999px;background:linear-gradient(180deg,#111c2e,#0d1625);color:#d6ddeb;padding:9px 13px;font-size:10px;transition:transform .18s,border-color .18s,background .18s}
 .quick:hover{transform:translateY(-1px);border-color:#41516f;background:#142039}
 .message{display:flex;align-items:flex-start;gap:10px;width:100%;min-width:0;margin:0 0 18px}
-.message.user{justify-content:flex-end;flex-direction:row-reverse}
+.message.user{justify-content:flex-start;flex-direction:row-reverse}
 .avatar{width:31px;height:31px;flex:0 0 31px;display:grid;place-items:center;border-radius:10px;background:#151f31;border:1px solid #2a3950;color:#aebacd;font-size:9px;font-weight:900}
 .message.user .avatar{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent;color:#fff}
 .message-body{flex:0 1 auto;width:max-content;min-width:0;max-width:calc(100% - 41px)}
