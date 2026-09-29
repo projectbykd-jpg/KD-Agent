@@ -11,6 +11,7 @@ The current baseline provides:
 - an integration registry covering all 15 requested projects;
 - deterministic task routing and dry-run plans;
 - environment-aware readiness reporting;
+- a local web control panel for creating and reviewing agent plans;
 - a standard-library Python CLI with no runtime dependency or API key required.
 
 ```powershell
@@ -18,6 +19,14 @@ python -m unittest discover -s tests -v
 python -m kd_agent.cli status
 python -m kd_agent.cli plan "Riset tren video dari web dan buat knowledge base"
 ```
+
+## Run the web panel
+
+```powershell
+py -m kd_agent.cli serve
+```
+
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in a browser. The panel is intentionally local-only by default and is a safe planning interface: it creates inspectable plans but will not call third-party services or execute tools yet.
 
 ## Architecture
 

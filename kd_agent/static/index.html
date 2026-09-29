@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>KD Agent</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <a class="brand" href="/" aria-label="KD Agent home"><span>KD</span> AGENT</a>
+        <p class="status"><i></i> Control plane online</p>
+      </header>
+
+      <section class="hero">
+        <p class="eyebrow">MODULAR AI WORKSPACE</p>
+        <h1>Rencanakan pekerjaan.<br><em>Eksekusi dengan sadar.</em></h1>
+        <p class="intro">Jelaskan tugas Anda. KD Agent akan memilih kapabilitas, menyusun langkah yang dapat diperiksa, dan menandai koneksi yang perlu dikonfigurasi.</p>
+      </section>
+
+      <section class="workspace" aria-label="KD Agent workspace">
+        <form id="task-form" class="composer">
+          <label for="objective">Apa yang ingin Anda kerjakan?</label>
+          <textarea id="objective" rows="5" placeholder="Contoh: Riset tren video AI dari web dan buat basis pengetahuan untuk tim saya." required></textarea>
+          <div class="composer-footer">
+            <span>Mode aman: hanya membuat rencana, belum menjalankan aksi eksternal.</span>
+            <button type="submit">Buat rencana <span aria-hidden="true">→</span></button>
+          </div>
+        </form>
+
+        <section class="plan-card" aria-live="polite">
+          <div class="section-heading"><p class="eyebrow">AGENT PLAN</p><span id="plan-state">Menunggu instruksi</span></div>
+          <div id="plan-empty" class="empty-state">Rencana kerja Anda akan muncul di sini.</div>
+          <ol id="plan-steps" class="plan-steps" hidden></ol>
+          <div id="warnings" class="warnings" hidden></div>
+        </section>
+      </section>
+
+      <section class="integrations">
+        <div class="section-heading"><p class="eyebrow">INTEGRATION READINESS</p><span id="integration-count">Memuat…</span></div>
+        <div id="integration-grid" class="integration-grid"></div>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
