@@ -9,10 +9,13 @@
     <title>KD Agent — AI Workspace</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="/static/pro.css">
+    <link rel="stylesheet" href="/static/mobile-fix.css">
   </head>
   <body>
     <div class="app-shell">
+      <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
       <aside class="sidebar">
+        <button id="sidebar-close" class="drawer-close" type="button" aria-label="Tutup menu">×</button>
         <div class="brand"><span class="brand-mark"><img src="https://i.ibb.co/DNGhtS0/image.png" alt="KD Agent logo"></span><div><strong>KD Agent</strong><small>AI WORKSPACE</small></div></div>
         <nav>
           <a class="nav-item active" href="#chat">⌁ <span>Agent Chat</span></a>
@@ -28,6 +31,7 @@
       </aside>
       <main class="main">
         <header class="topbar">
+          <button id="sidebar-toggle" class="mobile-menu" type="button" aria-label="Buka menu">☰</button>
           <div><p class="eyebrow">PERSONAL AI CONTROL PLANE</p><h1>KD Agent</h1></div>
           <div class="top-controls">
             <select id="provider" aria-label="AI provider">
@@ -36,6 +40,7 @@
               <option value="openrouter">OpenRouter</option>
             </select>
             <input id="model" aria-label="AI model" value="gpt-5.6">
+            <button id="tools-toggle" class="mobile-menu" type="button" aria-label="Buka tools">⚙</button>
             <span class="live-pill"><i id="live-dot"></i><span id="live-label">Ready</span></span>
           </div>
         </header>
@@ -63,6 +68,7 @@
             </form>
           </div>
           <aside class="right-rail">
+            <button id="tools-close" class="drawer-close" type="button" aria-label="Tutup tools">×</button>
             <section id="providers" class="panel-card">
               <div class="panel-head"><div><p class="eyebrow">PROVIDERS</p><h3>AI Engine</h3></div><span id="provider-count">3</span></div>
               <div id="provider-list" class="provider-list"></div>
