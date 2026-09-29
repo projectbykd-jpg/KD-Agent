@@ -2,85 +2,137 @@
 <html lang="id">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="description" content="KD Agent modern AI workspace">
+    <meta name="theme-color" content="#070b14">
     <link rel="icon" type="image/png" href="https://i.ibb.co/DNGhtS0/image.png">
     <link rel="apple-touch-icon" href="https://i.ibb.co/DNGhtS0/image.png">
     <title>KD Agent — AI Workspace</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <link rel="stylesheet" href="/static/pro.css">
-    <link rel="stylesheet" href="/static/mobile-fix.css">
   </head>
   <body>
     <div class="app-shell">
       <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
-      <aside class="sidebar">
-        <button id="sidebar-close" class="drawer-close" type="button" aria-label="Tutup menu"><span aria-hidden="true">×</span></button>
-        <div class="brand"><span class="brand-mark"><img src="https://i.ibb.co/DNGhtS0/image.png" alt="KD Agent logo"></span><div><strong>KD Agent</strong><small>AI WORKSPACE</small></div></div>
-        <nav>
-          <a class="nav-item active" href="#chat">⌁ <span>Agent Chat</span></a>
-          <a class="nav-item" href="#providers">◈ <span>Providers</span></a>
-          <a class="nav-item" href="#plan-panel">✦ <span>Task Plan</span></a>
+
+      <aside class="sidebar sidebar-left" id="sidebar">
+        <div class="sidebar-head">
+          <a class="brand" href="#chat" aria-label="KD Agent home">
+            <span class="brand-logo"><img src="https://i.ibb.co/DNGhtS0/image.png" alt="KD Agent"></span>
+            <span class="brand-copy"><strong>KD Agent</strong><small>AI WORKSPACE</small></span>
+          </a>
+          <button class="icon-button drawer-close" id="sidebar-close" type="button" aria-label="Tutup menu">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+
+        <nav class="nav" aria-label="Navigasi utama">
+          <a class="nav-item active" href="#chat" data-close-drawer>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.8 4v-4H6.5A2.5 2.5 0 0 1 4 13.5z"/></svg>
+            <span>Agent Chat</span>
+          </a>
+          <a class="nav-item" href="#providers" data-close-drawer>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.2 4.8L19 10l-4.8 2.2L12 17l-2.2-4.8L5 10l4.8-2.2zM18.5 16l.9 2.1L21.5 19l-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>
+            <span>Providers</span>
+          </a>
+          <a class="nav-item" href="#plan-panel" data-close-drawer>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10M6 7h12v13H6zM9 11h6M9 15h4"/></svg>
+            <span>Task Plan</span>
+          </a>
         </nav>
-        <div class="sidebar-bottom">
-          <div class="mini-status"><i id="connection-dot"></i><div><strong id="connection-text">Backend ready</strong><small id="backend-text">AI service dikelola otomatis</small></div></div>
-          <p class="security-note">API key dan endpoint dikelola di backend. Tidak ada secret di panel.</p>
+
+        <div class="sidebar-foot">
+          <div class="connection-card">
+            <span class="status-dot" id="connection-dot"></span>
+            <span><strong id="connection-text">Connecting…</strong><small id="backend-text">AI service</small></span>
+          </div>
+          <p>Endpoint and secrets are managed by the backend.</p>
         </div>
       </aside>
-      <main class="main">
+
+      <main class="workspace">
         <header class="topbar">
-          <button id="sidebar-toggle" class="mobile-menu" type="button" aria-label="Buka menu">☰</button>
-          <div><p class="eyebrow">PERSONAL AI CONTROL PLANE</p><h1>KD Agent</h1></div>
-          <div class="top-controls">
-            <select id="provider" aria-label="AI provider">
-              <option value="openai">OpenAI</option>
-              <option value="groq">Groq</option>
-              <option value="openrouter">OpenRouter</option>
-            </select>
-            <input id="model" aria-label="AI model" value="gpt-5.6">
-            <button id="tools-toggle" class="mobile-menu" type="button" aria-label="Buka tools">⚙</button>
-            <span class="live-pill"><i id="live-dot"></i><span id="live-label">Ready</span></span>
+          <div class="topbar-main">
+            <button class="icon-button mobile-only" id="sidebar-toggle" type="button" aria-label="Buka menu">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div class="title-wrap">
+              <p class="eyebrow">PERSONAL AI CONTROL PLANE</p>
+              <h1>KD Agent</h1>
+            </div>
+          </div>
+
+          <div class="topbar-tools">
+            <label class="control">
+              <span>Provider</span>
+              <select id="provider" aria-label="AI provider">
+                <option value="openai">OpenAI</option>
+                <option value="groq">Groq</option>
+                <option value="openrouter">OpenRouter</option>
+              </select>
+            </label>
+            <label class="control model-control">
+              <span>Model</span>
+              <input id="model" value="gpt-5.6" aria-label="AI model" autocomplete="off">
+            </label>
+            <button class="icon-button mobile-only" id="tools-toggle" type="button" aria-label="Buka tools">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.3a3.7 3.7 0 1 0 0 7.4 3.7 3.7 0 0 0 0-7.4zM4.8 13.2l-1.2.7 1.7 3 1.3-.7c.5.5 1 .9 1.6 1.1V19h3.5v-1.7c.6-.2 1.1-.6 1.6-1.1l1.3.7 1.7-3-1.2-.7.1-1.2-.1-1.2 1.2-.7-1.7-3-1.3.7c-.5-.5-1-.9-1.6-1.1V5H8.2v1.7c-.6.2-1.1.6-1.6 1.1l-1.3-.7-1.7 3 1.2.7-.1 1.2z"/></svg>
+            </button>
+            <span class="live-pill"><i id="live-dot"></i><span id="live-label">Connecting</span></span>
           </div>
         </header>
-        <section id="chat" class="chat-layout">
-          <div class="chat-card">
-            <div id="chat-feed" class="chat-feed">
+
+        <section class="content-grid">
+          <section class="chat-card" id="chat">
+            <div class="chat-feed" id="chat-feed">
               <div class="welcome">
-                <div class="orb"><img src="https://i.ibb.co/DNGhtS0/image.png" alt="KD Agent"></div>
+                <div class="welcome-logo"><img src="https://i.ibb.co/DNGhtS0/image.png" alt="KD Agent"></div>
                 <p class="eyebrow">KD AGENT ONLINE</p>
                 <h2>Halo. Apa yang mau kita kerjakan?</h2>
-                <p>Pilih provider, tulis tugasmu, lalu biarkan KD Agent membantu memecahnya menjadi pekerjaan yang jelas dan bisa diperiksa.</p>
+                <p class="welcome-copy">Tulis tugas, pilih provider, dan biarkan KD Agent membantu menyusun rencana serta menjalankan percakapan AI.</p>
                 <div class="quick-actions">
-                  <button class="quick" data-prompt="Buat rencana untuk membangun website AI Agent modern.">Bangun AI Agent</button>
-                  <button class="quick" data-prompt="Analisis struktur project saya dan cari masalah utama yang perlu diperbaiki.">Audit project</button>
-                  <button class="quick" data-prompt="Buat roadmap coding 7 hari untuk menyelesaikan project ini.">Buat roadmap</button>
+                  <button class="quick" type="button" data-prompt="Buat rencana untuk membangun website AI Agent modern.">Bangun AI Agent</button>
+                  <button class="quick" type="button" data-prompt="Analisis struktur project saya dan cari masalah utama yang perlu diperbaiki.">Audit project</button>
+                  <button class="quick" type="button" data-prompt="Buat roadmap coding 7 hari untuk menyelesaikan project ini.">Buat roadmap</button>
                 </div>
               </div>
             </div>
-            <form id="chat-form" class="composer">
+
+            <form class="composer" id="chat-form">
               <textarea id="prompt" rows="3" placeholder="Tulis instruksi untuk KD Agent…" required></textarea>
               <div class="composer-bar">
                 <span><kbd>Enter</kbd> kirim · <kbd>Shift</kbd> + <kbd>Enter</kbd> baris baru</span>
-                <button id="send-btn" class="send-btn" type="submit"><span>Kirim</span> ↗</button>
+                <button class="send-btn" id="send-btn" type="submit"><span>Kirim</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
               </div>
             </form>
-          </div>
-          <aside class="right-rail">
-            <button id="tools-close" class="drawer-close" type="button" aria-label="Tutup tools">×</button>
-            <section id="providers" class="panel-card">
-              <div class="panel-head"><div><p class="eyebrow">PROVIDERS</p><h3>AI Engine</h3></div><span id="provider-count">3</span></div>
-              <div id="provider-list" class="provider-list"></div>
+          </section>
+
+          <aside class="right-rail" id="right-rail" aria-label="Tools">
+            <button class="icon-button drawer-close" id="tools-close" type="button" aria-label="Tutup tools">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+
+            <section class="panel-card" id="providers">
+              <div class="panel-head">
+                <div><p class="eyebrow">AI ENGINE</p><h3>Providers</h3></div>
+                <span class="panel-count" id="provider-count">3</span>
+              </div>
+              <div class="provider-list" id="provider-list"></div>
             </section>
-            <section id="plan-panel" class="panel-card">
-              <div class="panel-head"><div><p class="eyebrow">TASK PLAN</p><h3>Execution outline</h3></div><span id="plan-state">Idle</span></div>
-              <div id="plan-empty" class="plan-empty">Belum ada tugas.</div>
-              <ol id="plan-steps" class="plan-steps" hidden></ol>
-              <div id="warnings" class="warnings" hidden></div>
+
+            <section class="panel-card" id="plan-panel">
+              <div class="panel-head">
+                <div><p class="eyebrow">TASK PLAN</p><h3>Execution outline</h3></div>
+                <span class="panel-count" id="plan-state">Idle</span>
+              </div>
+              <div class="plan-empty" id="plan-empty">Belum ada tugas.</div>
+              <ol class="plan-steps" id="plan-steps" hidden></ol>
+              <div class="warnings" id="warnings" hidden></div>
             </section>
           </aside>
         </section>
       </main>
     </div>
+
     <script src="/static/app.js"></script>
   </body>
 </html>

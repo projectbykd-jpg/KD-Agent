@@ -1,4 +1,5 @@
 const $ = (selector) => document.querySelector(selector);
+
 const form = $("#chat-form");
 const promptInput = $("#prompt");
 const feed = $("#chat-feed");
@@ -15,8 +16,9 @@ const planState = $("#plan-state");
 const planEmpty = $("#plan-empty");
 const planSteps = $("#plan-steps");
 const warnings = $("#warnings");
-const sidebar = $(".sidebar");
-const rightRail = $(".right-rail");
+
+const sidebar = $("#sidebar");
+const rightRail = $("#right-rail");
 const drawerBackdrop = $("#drawer-backdrop");
 const sidebarToggle = $("#sidebar-toggle");
 const toolsToggle = $("#tools-toggle");
@@ -28,40 +30,41 @@ const DEFAULT_BACKEND_URL = "https://kd-agent-api.onrender.com";
 let messages = [];
 let providers = [];
 
-function apiBase() {
-  return DEFAULT_BACKEND_URL;
-}
-
 function apiUrl(path) {
-  const base = apiBase();
-  return base ? base + path : path;
+  return DEFAULT_BACKEND_URL + path;
 }
 
 function setConnection(ok, label, detail) {
-  connectionDot.className = ok ? "good" : "";
-  liveDot.className = ok ? "good" : "";
+  connectionDot.classList.toggle("good", Boolean(ok));
+  liveDot.classList.toggle("good", Boolean(ok));
   connectionText.textContent = label;
   backendText.textContent = detail;
-  liveLabel.textContent = ok ? "Connected" : "Local";
+  liveLabel.textContent = ok ? "Connected" : "Offline";
 }
 
 function addMessage(role, content, meta = "") {
-  const empty = feed.querySelector(".welcome");
-  if (empty) empty.remove();
+  feed.querySelector(".welcome")?.remove();
+
   const wrapper = document.createElement("div");
-  const variant = meta === "KD Agent" && content.startsWith("Gagal menjalankan AI:") ? "error" : "";
-  wrapper.className = "message " + role + (variant ? " " + variant : "");
-  if (variant) wrapper.setAttribute("role", "alert");
+  const isError = role === "assistant" && content.startsWith("Gagal menjalankan AI:");
+  wrapper.className = "message " + role + (isError ? " error" : "");
+  if (isError) wrapper.setAttribute("role", "alert");
+
   const avatar = document.createElement("div");
   avatar.className = "avatar";
-  avatar.textContent = role === "user" ? "YOU" : (variant ? "!" : "KD");
+  avatar.textContent = role === "user" ? "YOU" : (isError ? "!" : "KD");
+
   const body = document.createElement("div");
+  body.className = "message-body";
+
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.textContent = content;
+
   const time = document.createElement("div");
   time.className = "meta";
   time.textContent = meta || (role === "user" ? "You" : "KD Agent");
+
   body.append(bubble, time);
   wrapper.append(avatar, body);
   feed.append(wrapper);
@@ -73,11 +76,23 @@ function setThinking(active) {
   if (active && !existing) {
     const wrapper = document.createElement("div");
     wrapper.className = "message assistant thinking";
-    wrapper.innerHTML = '<div class="avatar">KD</div><div><div class="bubble">Sedang berpikir…</div><div class="meta">AI engine</div></div>';
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "KD";
+    const body = document.createElement("div");
+    body.className = "message-body";
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = "Sedang berpikir…";
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = "AI engine";
+    body.append(bubble, meta);
+    wrapper.append(avatar, body);
     feed.append(wrapper);
     feed.scrollTop = feed.scrollHeight;
-  } else if (!active && existing) {
-    existing.remove();
+  } else if (!active) {
+    existing?.remove();
   }
 }
 
@@ -92,78 +107,104 @@ function localPlan(objective) {
     ["media", ["video", "media", "montage"], "Susun alur kerja produksi media."],
     ["execution", ["run", "execute", "deploy", "jalankan"], "Siapkan langkah eksekusi yang terisolasi."]
   ];
-  const steps = [{capability:"planning", action:"Pecah tujuan menjadi langkah yang dapat diperiksa.", integration:null}];
-  for (const rule of rules) {
-    const capability = rule[0];
-    const keywords = rule[1];
-    const action = rule[2];
+
+  const steps = [
+    {capability:"planning", action:"Pecah tujuan menjadi langkah yang dapat diperiksa."}
+  ];
+
+  rules.forEach(([capability, keywords, action]) => {
     if (keywords.some((word) => text.includes(word))) {
-      steps.push({capability, action, integration:null});
+      steps.push({capability, action});
     }
-  }
-  return {objective, steps, warnings:["Mode browser: rencana lokal. Hubungkan backend untuk AI dan readiness provider."]};
+  });
+
+  return {
+    objective,
+    steps,
+    warnings:["Backend plan belum merespons. Menampilkan rencana lokal."]
+  };
 }
 
 function renderPlan(plan) {
   planSteps.replaceChildren();
+
   plan.steps.forEach((step, index) => {
     const item = document.createElement("li");
     item.className = "plan-step";
+
     const num = document.createElement("span");
     num.className = "step-num";
     num.textContent = String(index + 1).padStart(2, "0");
+
     const copy = document.createElement("div");
     copy.className = "step-copy";
-    const strong = document.createElement("strong");
-    strong.textContent = step.capability.replaceAll("_", " ");
-    const p = document.createElement("p");
-    p.textContent = step.action;
-    copy.append(strong, p);
+
+    const title = document.createElement("strong");
+    title.textContent = step.capability.replaceAll("_", " ");
+
+    const detail = document.createElement("p");
+    detail.textContent = step.action;
+
+    copy.append(title, detail);
     item.append(num, copy);
     planSteps.append(item);
   });
+
   planEmpty.hidden = true;
   planSteps.hidden = false;
-  planState.textContent = plan.steps.length + " langkah";
-  warnings.replaceChildren(...(plan.warnings || []).map((warning) => {
+  planState.textContent = plan.steps.length + " steps";
+
+  warnings.replaceChildren();
+  (plan.warnings || []).forEach((warning) => {
     const p = document.createElement("p");
     p.textContent = warning;
-    return p;
-  }));
+    warnings.append(p);
+  });
   warnings.hidden = !(plan.warnings || []).length;
 }
 
 function renderProviders() {
   providerList.replaceChildren();
+
   providers.forEach((item) => {
     const card = document.createElement("div");
     card.className = "provider" + (item.id === providerSelect.value ? " active" : "");
+
     const top = document.createElement("div");
     top.className = "provider-top";
+
     const name = document.createElement("div");
     name.className = "provider-name";
+
     const dot = document.createElement("span");
     dot.className = "provider-dot" + (item.configured ? " good" : "");
+
     const title = document.createElement("span");
     title.textContent = item.name;
+
     name.append(dot, title);
+
     const status = document.createElement("span");
+    status.className = "provider-status" + (item.configured ? " ready" : "");
     status.textContent = item.configured ? "READY" : "OFF";
-    status.style.color = item.configured ? "#4ade80" : "#69768c";
-    status.style.fontSize = "9px";
-    status.style.fontWeight = "800";
+
     top.append(name, status);
+
     const model = document.createElement("small");
-    model.textContent = item.configured ? item.model : "Isi " + item.api_key_env + " di backend";
+    model.className = "provider-model";
+    model.textContent = item.configured ? item.model : "API key belum dikonfigurasi";
+
     const action = document.createElement("button");
     action.className = "provider-action";
-    action.textContent = item.id === providerSelect.value ? "Dipilih" : "Pakai provider ini";
+    action.type = "button";
     action.disabled = item.id === providerSelect.value;
+    action.textContent = item.id === providerSelect.value ? "Dipilih" : "Gunakan provider";
     action.addEventListener("click", () => {
       providerSelect.value = item.id;
-      modelInput.value = item.model;
+      modelInput.value = item.model || "";
       renderProviders();
     });
+
     card.append(top, model, action);
     providerList.append(card);
   });
@@ -171,40 +212,77 @@ function renderProviders() {
 
 async function loadProviders() {
   try {
-    const response = await fetch(apiUrl("/api/v1/providers"));
+    const response = await fetch(apiUrl("/api/v1/providers"), {headers:{"Accept":"application/json"}});
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Provider endpoint gagal.");
-    providers = data.providers || [];
-    providerSelect.value = data.default_provider || "openai";
-    const selected = providers.find((item) => item.id === providerSelect.value);
-    modelInput.value = selected?.model || "gpt-5.6";
+
+    if (!response.ok) {
+      throw new Error(data.error || "Provider endpoint gagal.");
+    }
+
+    providers = Array.isArray(data.providers) ? data.providers : [];
+
+    const defaultProvider = data.default_provider || providers[0]?.id || "openai";
+    providerSelect.value = defaultProvider;
+
+    const selected = providers.find((item) => item.id === defaultProvider);
+    modelInput.value = selected?.model || modelInput.value;
+
     renderProviders();
     setConnection(true, "Backend online", providers.filter((item) => item.configured).length + "/3 provider siap");
     return true;
   } catch (error) {
-    setConnection(false, "Backend error", error.message);
+    providers = [
+      {id:"openai", name:"OpenAI", configured:false, model:"gpt-5.6"},
+      {id:"groq", name:"Groq", configured:false, model:"openai/gpt-oss-120b"},
+      {id:"openrouter", name:"OpenRouter", configured:false, model:"openrouter/auto"}
+    ];
+    renderProviders();
+    setConnection(false, "Backend offline", error.message);
     return false;
   }
 }
 
-async function makePlan(text) {
-  planState.textContent = "Menyusun…";
+async function makePlan(objective) {
+  planState.textContent = "Working…";
+
   try {
     const response = await fetch(apiUrl("/api/v1/plan"), {
       method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({objective:text})
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({objective})
     });
-    if (!response.ok) throw new Error("Backend plan gagal");
-    renderPlan(await response.json());
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Plan request gagal.");
+    }
+
+    renderPlan(data);
   } catch {
-    renderPlan(localPlan(text));
+    renderPlan(localPlan(objective));
   }
 }
 
-providerSelect.addEventListener("change", () => {
+function closeDrawers() {
+  sidebar?.classList.remove("open");
+  rightRail?.classList.remove("open");
+  document.body.classList.remove("drawer-open");
+  if (drawerBackdrop) drawerBackdrop.hidden = true;
+}
+
+function openDrawer(drawer) {
+  if (!drawer) return;
+  sidebar?.classList.remove("open");
+  rightRail?.classList.remove("open");
+  drawer.classList.add("open");
+  document.body.classList.add("drawer-open");
+  if (drawerBackdrop) drawerBackdrop.hidden = false;
+}
+
+providerSelect?.addEventListener("change", () => {
   const provider = providers.find((item) => item.id === providerSelect.value);
-  modelInput.value = provider?.model || modelInput.value;
+  modelInput.value = provider?.model || "";
   renderProviders();
 });
 
@@ -215,75 +293,74 @@ document.querySelectorAll(".quick").forEach((button) => {
   });
 });
 
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const prompt = promptInput.value.trim();
-  if (!prompt) return;
-  const selected = providerSelect.value;
-  const model = modelInput.value.trim();
-  addMessage("user", prompt);
-  messages.push({role:"user", content:prompt});
-  promptInput.value = "";
-  sendBtn.disabled = true;
-  setThinking(true);
-  await makePlan(prompt);
-
-  try {
-    const response = await fetch(apiUrl("/api/v1/chat"), {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({prompt, provider:selected, model, history:messages.slice(0,-1).slice(-20)})
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "AI request gagal.");
-    setThinking(false);
-    addMessage("assistant", data.content || "Provider tidak mengembalikan isi jawaban.", data.provider_name + " · " + data.model);
-    messages.push({role:"assistant", content:data.content || ""});
-    setConnection(true, "Backend online", data.provider_name + " · " + data.model);
-  } catch (error) {
-    setThinking(false);
-    addMessage("assistant", "Gagal menjalankan AI: " + error.message, "KD Agent");
-    setConnection(false, "Backend error", "Cek URL dan API key provider");
-  } finally {
-    sendBtn.disabled = false;
-  }
+document.querySelectorAll("[data-close-drawer]").forEach((item) => {
+  item.addEventListener("click", closeDrawers);
 });
-
-promptInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !event.shiftKey) {
-    event.preventDefault();
-    form.requestSubmit();
-  }
-});
-
-
-function closeDrawers() {
-  sidebar?.classList.remove("open");
-  rightRail?.classList.remove("open");
-  document.body.classList.remove("drawer-open");
-  if (drawerBackdrop) drawerBackdrop.hidden = true;
-}
-
-function openDrawer(target) {
-  if (!target) return;
-  sidebar?.classList.remove("open");
-  rightRail?.classList.remove("open");
-  target.classList.add("open");
-  document.body.classList.add("drawer-open");
-  if (drawerBackdrop) drawerBackdrop.hidden = false;
-}
 
 sidebarToggle?.addEventListener("click", () => openDrawer(sidebar));
 toolsToggle?.addEventListener("click", () => openDrawer(rightRail));
 sidebarClose?.addEventListener("click", closeDrawers);
 toolsClose?.addEventListener("click", closeDrawers);
 drawerBackdrop?.addEventListener("click", closeDrawers);
-document.querySelectorAll(".sidebar .nav-item").forEach((item) => {
-  item.addEventListener("click", () => closeDrawers());
+
+form?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const prompt = promptInput.value.trim();
+  if (!prompt || sendBtn.disabled) return;
+
+  const selected = providerSelect.value;
+  const model = modelInput.value.trim();
+
+  addMessage("user", prompt);
+  messages.push({role:"user", content:prompt});
+  promptInput.value = "";
+  sendBtn.disabled = true;
+  setThinking(true);
+
+  await makePlan(prompt);
+
+  try {
+    const response = await fetch(apiUrl("/api/v1/chat"), {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({
+        prompt,
+        provider:selected,
+        model,
+        history:messages.slice(0, -1).slice(-20)
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "AI request gagal.");
+    }
+
+    setThinking(false);
+    const answer = data.content || "Provider tidak mengembalikan isi jawaban.";
+    addMessage("assistant", answer, data.provider_name + " · " + data.model);
+    messages.push({role:"assistant", content:answer});
+    setConnection(true, "Backend online", data.provider_name + " · " + data.model);
+  } catch (error) {
+    setThinking(false);
+    addMessage("assistant", "Gagal menjalankan AI: " + error.message, "KD Agent");
+    setConnection(false, "AI error", "Periksa konfigurasi provider di backend");
+  } finally {
+    sendBtn.disabled = false;
+  }
+});
+
+promptInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    form.requestSubmit();
+  }
 });
 
 window.addEventListener("resize", () => {
-  if (window.innerWidth > 760) closeDrawers();
+  if (window.innerWidth > 860) closeDrawers();
 });
 
 loadProviders();
