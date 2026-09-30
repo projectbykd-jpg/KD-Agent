@@ -307,20 +307,19 @@ async function loadProviders() {
 
     providers = Array.isArray(data.providers) ? data.providers : [];
 
-    const defaultProvider = data.default_provider || providers[0]?.id || "openai";
+    const defaultProvider = data.default_provider || providers[0]?.id || "gemini";
     providerSelect.value = defaultProvider;
 
     const selected = providers.find((item) => item.id === defaultProvider);
     modelInput.value = selected?.model || modelInput.value;
 
     renderProviders();
-    setConnection(true, "Backend online", providers.filter((item) => item.configured).length + "/3 provider siap");
+    setConnection(true, "Backend online", providers.filter((item) => item.configured).length + "/2 provider siap");
     return true;
   } catch (error) {
     providers = [
-      {id:"openai", name:"OpenAI", configured:false, model:"gpt-5.6"},
-      {id:"groq", name:"Groq", configured:false, model:"openai/gpt-oss-120b"},
-      {id:"openrouter", name:"OpenRouter", configured:false, model:"openrouter/auto"}
+      {id:"gemini", name:"Google Gemini", configured:false, model:"gemini-2.5-flash"},
+      {id:"groq", name:"Groq", configured:false, model:"openai/gpt-oss-120b"}
     ];
     renderProviders();
     setConnection(false, "Backend offline", error.message);
