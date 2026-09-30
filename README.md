@@ -93,7 +93,7 @@ Groq remains available:
 
 ```text
 GROQ_API_KEY=your-groq-secret
-GROQ_MODEL=openai/gpt-oss-120b
+GROQ_MODEL=qwen/qwen3.8-27b
 ```
 
 Keep all API keys in the backend environment; never commit them to GitHub or expose them in the public panel.
