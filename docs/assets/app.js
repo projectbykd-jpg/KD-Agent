@@ -587,19 +587,18 @@ async function loadProviders() {
 
     providers = Array.isArray(data.providers) ? data.providers : [];
 
-    const defaultProvider = data.default_provider || providers[0]?.id || "gemini";
+    const defaultProvider = data.default_provider || providers[0]?.id || "pateway";
     providerSelect.value = defaultProvider;
 
     const selected = providers.find((item) => item.id === defaultProvider);
     modelInput.value = selected?.model || modelInput.value;
 
     renderProviders();
-    setConnection(true, "Backend online", providers.filter((item) => item.configured).length + "/2 provider siap");
+    setConnection(true, "Backend online", providers.filter((item) => item.configured).length + "/1 provider siap");
     return true;
   } catch (error) {
     providers = [
-      {id:"gemini", name:"Google Gemini", configured:false, model:"gemini-2.5-flash"},
-      {id:"groq", name:"Groq", configured:false, model:"qwen/qwen3.8-27b"}
+      {id:"pateway", name:"PatewayAI", configured:false, model:"claude-sonnet-4-6"}
     ];
     renderProviders();
     setConnection(false, "Backend offline", error.message);

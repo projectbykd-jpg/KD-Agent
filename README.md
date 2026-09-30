@@ -8,7 +8,7 @@ It does not vendor, fork, or silently install the projects listed below. Their l
 
 The current baseline provides:
 
-- a provider-neutral AI chat layer with Google Gemini as the primary provider and Groq as an optional provider;
+- a provider-neutral AI chat layer using PatewayAI as the single configured provider;
 - a modern AI workspace UI with provider/model selection and backend connection status;
 - an integration registry covering all 15 requested projects;
 - deterministic task routing and dry-run plans;
@@ -39,7 +39,7 @@ The repository publishes a static, privacy-preserving planning panel to GitHub P
 The public panel never contains provider API keys. The production architecture is:
 
 ```text
-GitHub Pages / Render static panel -> KD Agent API -> Gemini or Groq
+GitHub Pages / Render static panel -> KD Agent API -> PatewayAI
 ```
 
 ## Deploy the private backend
