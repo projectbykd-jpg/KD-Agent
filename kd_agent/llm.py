@@ -23,30 +23,21 @@ class Provider:
 
 
 PROVIDERS: dict[str, Provider] = {
-    "gemini": Provider(
-        "gemini",
-        "Google Gemini",
-        "GEMINI_API_KEY",
-        "GEMINI_MODEL",
-        "https://generativelanguage.googleapis.com/v1beta",
-        "gemini-2.5-flash",
-        "gemini",
-    ),
-    "groq": Provider(
-        "groq",
-        "Groq",
-        "GROQ_API_KEY",
-        "GROQ_MODEL",
-        "https://api.groq.com/openai/v1",
-        "qwen/qwen3.8-27b",
-        "chat_completions",
+    "pateway": Provider(
+        "pateway",
+        "PatewayAI",
+        "PATEWAY_API_KEY",
+        "PATEWAY_MODEL",
+        "https://api.pateway.ai/v1",
+        "claude-sonnet-4-6",
+        "anthropic_messages",
     ),
 }
 
 
 def default_provider() -> str:
-    provider = os.getenv("AI_PROVIDER", "gemini").strip().casefold()
-    return provider if provider in PROVIDERS else "gemini"
+    provider = os.getenv("AI_PROVIDER", "pateway").strip().casefold()
+    return provider if provider in PROVIDERS else "pateway"
 
 
 def _masked_status(provider: Provider) -> dict[str, object]:
@@ -76,68 +67,19 @@ def _provider(provider_name: str | None) -> Provider:
         raise LLMError(f"Provider tidak dikenal: {name}") from exc
 
 
-def _extract_chat_text(payload: dict[str, object]) -> str:
-    choices = payload.get("choices")
-    if isinstance(choices, list) and choices:
-        first = choices[0]
-        if isinstance(first, dict):
-            message = first.get("message")
-            if isinstance(message, dict):
-                content = message.get("content")
-                if isinstance(content, str):
-                    return content.strip()
-                if isinstance(content, list):
-                    parts: list[str] = []
-                    for item in content:
-                        if isinstance(item, dict):
-                            text = item.get("text")
-                            if isinstance(text, str):
-                                parts.append(text)
-                    return "".join(parts).strip()
-    raise LLMError("Provider mengembalikan respons tanpa teks yang dapat dibaca.")
-
-
-def _extract_gemini_text(payload: dict[str, object]) -> str:
-    candidates = payload.get("candidates")
-    if isinstance(candidates, list) and candidates:
-        first = candidates[0]
-        if isinstance(first, dict):
-            content = first.get("content")
-            if isinstance(content, dict):
-                parts = content.get("parts")
-                if isinstance(parts, list):
-                    texts: list[str] = []
-                    for part in parts:
-                        if isinstance(part, dict):
-                            text = part.get("text")
-                            if isinstance(text, str):
-                                texts.append(text)
-                    result = "".join(texts).strip()
-                    if result:
-                        return result
-    raise LLMError("Gemini mengembalikan respons tanpa teks yang dapat dibaca.")
-
-
-def _gemini_content(
-    messages: list[dict[str, str]],
-) -> tuple[str, list[dict[str, object]]]:
-    system_text = ""
-    contents: list[dict[str, object]] = []
-
-    for item in messages:
-        role = item["role"]
-        content = item["content"]
-        if role == "system":
-            system_text = content
-            continue
-        contents.append(
-            {
-                "role": "model" if role == "assistant" else "user",
-                "parts": [{"text": content}],
-            }
-        )
-
-    return system_text, contents
+def _extract_anthropic_text(payload: dict[str, object]) -> str:
+    content = payload.get("content")
+    if isinstance(content, list):
+        parts: list[str] = []
+        for item in content:
+            if isinstance(item, dict) and item.get("type") == "text":
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+        result = "".join(parts).strip()
+        if result:
+            return result
+    raise LLMError("PatewayAI mengembalikan respons tanpa teks yang dapat dibaca.")
 
 
 def _error_detail(provider: Provider, raw: str, reason: str | None = None) -> str:
@@ -152,81 +94,71 @@ def _error_detail(provider: Provider, raw: str, reason: str | None = None) -> st
             message = error.get("message")
             if isinstance(message, str) and message.strip():
                 return message.strip()
+        detail = payload.get("detail")
+        if isinstance(detail, str) and detail.strip():
+            return detail
+        message = payload.get("message")
+        if isinstance(message, str) and message.strip():
+            return message.strip()
 
     return raw[:600].strip() or reason or "Permintaan provider gagal."
 
 
-def _chat_completions(
-    provider: Provider,
-    api_key: str,
-    selected_model: str,
-    messages: list[dict[str, str]],
-) -> dict[str, object]:
-    body = json.dumps(
-        {
-            "model": selected_model,
-            "messages": messages,
-        }
-    ).encode("utf-8")
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/153.0.0.0 Safari/537.36"
-        ),
-    }
-
-    request = Request(
-        f"{provider.base_url}/chat/completions",
-        data=body,
-        headers=headers,
-        method="POST",
-    )
-
-    raw = _request(provider, request)
+def _max_tokens() -> int:
+    raw = os.getenv("PATEWAY_MAX_TOKENS", "4096").strip()
     try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise LLMError(f"Respons {provider.label} bukan JSON yang valid.") from exc
-
-    content = _extract_chat_text(payload)
-    usage = payload.get("usage") if isinstance(payload.get("usage"), dict) else {}
-
-    return {
-        "provider": provider.key,
-        "provider_name": provider.label,
-        "model": payload.get("model", selected_model),
-        "content": content,
-        "usage": usage,
-    }
+        value = int(raw)
+    except ValueError:
+        return 4096
+    return max(256, min(value, 32768))
 
 
-def _gemini(
+def _pateway_messages(
+    messages: list[dict[str, str]],
+) -> tuple[str, list[dict[str, str]]]:
+    system_text = ""
+    result: list[dict[str, str]] = []
+
+    for item in messages:
+        role = item["role"]
+        content = item["content"]
+        if role == "system":
+            system_text = content
+            continue
+        if role in {"user", "assistant"}:
+            result.append({"role": role, "content": content})
+
+    return system_text, result
+
+
+def _pateway(
     provider: Provider,
     api_key: str,
     selected_model: str,
     messages: list[dict[str, str]],
 ) -> dict[str, object]:
-    system_text, contents = _gemini_content(messages)
+    system_text, provider_messages = _pateway_messages(messages)
 
-    request_body: dict[str, object] = {"contents": contents}
+    request_body: dict[str, object] = {
+        "model": selected_model,
+        "max_tokens": _max_tokens(),
+        "messages": provider_messages,
+    }
     if system_text:
-        request_body["systemInstruction"] = {
-            "parts": [{"text": system_text}],
-        }
+        request_body["system"] = system_text
 
     body = json.dumps(request_body).encode("utf-8")
     request = Request(
-        f"{provider.base_url}/models/{selected_model}:generateContent",
+        f"{provider.base_url}/messages",
         data=body,
         headers={
-            "x-goog-api-key": api_key,
+            "x-api-key": api_key,
             "Content-Type": "application/json",
             "Accept": "application/json",
+            "User-Agent": (
+                "KD-Agent/0.1 "
+                "(Python urllib; PatewayAI Anthropic Messages client)"
+            ),
         },
         method="POST",
     )
@@ -235,15 +167,15 @@ def _gemini(
     try:
         payload = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise LLMError("Respons Google Gemini bukan JSON yang valid.") from exc
+        raise LLMError("Respons PatewayAI bukan JSON yang valid.") from exc
 
-    content = _extract_gemini_text(payload)
-    usage = payload.get("usageMetadata") if isinstance(payload.get("usageMetadata"), dict) else {}
+    content = _extract_anthropic_text(payload)
+    usage = payload.get("usage") if isinstance(payload.get("usage"), dict) else {}
 
     return {
         "provider": provider.key,
         "provider_name": provider.label,
-        "model": selected_model,
+        "model": payload.get("model", selected_model),
         "content": content,
         "usage": usage,
     }
@@ -288,8 +220,7 @@ def chat(
     if not selected_model:
         selected_model = provider.default_model
 
-    # Reject accidental UI/environment values that cannot be valid model IDs.
-    if any(char.isspace() for char in selected_model) or any(char in selected_model for char in "<>\"\\\\"):
+    if any(char.isspace() for char in selected_model) or any(char in selected_model for char in '<>""\\'):
         selected_model = provider.default_model
 
     system_prompt = os.getenv(
@@ -314,7 +245,7 @@ def chat(
 
     messages.append({"role": "user", "content": prompt})
 
-    if provider.protocol == "gemini":
-        return _gemini(provider, api_key, selected_model, messages)
+    if provider.protocol == "anthropic_messages":
+        return _pateway(provider, api_key, selected_model, messages)
 
-    return _chat_completions(provider, api_key, selected_model, messages)
+    raise LLMError(f"Protocol provider tidak didukung: {provider.protocol}")
