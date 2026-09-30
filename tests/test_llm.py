@@ -91,6 +91,45 @@ class LLMTests(unittest.TestCase):
         self.assertEqual(captured["body"]["contents"][1]["role"], "user")
         self.assertIn("systemInstruction", captured["body"])
 
+    def test_groq_uses_browser_compatible_user_agent(self):
+        response_payload = {
+            "choices": [{"message": {"content": "Groq works"}}],
+            "model": "qwen/qwen3.8-27b",
+        }
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self):
+                return json.dumps(response_payload).encode("utf-8")
+
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["headers"] = dict(request.headers)
+            captured["url"] = request.full_url
+            return FakeResponse()
+
+        with patch.dict(
+            os.environ,
+            {
+                "AI_PROVIDER": "groq",
+                "GROQ_API_KEY": "test-key",
+                "GROQ_MODEL": "qwen/qwen3.8-27b",
+            },
+            clear=True,
+        ):
+            with patch("kd_agent.llm.urlopen", fake_urlopen):
+                result = chat("hello")
+
+        self.assertEqual(result["content"], "Groq works")
+        self.assertIn("Chrome/", captured["headers"]["User-agent"])
+        self.assertTrue(captured["url"].endswith("/chat/completions"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -38,7 +38,7 @@ PROVIDERS: dict[str, Provider] = {
         "GROQ_API_KEY",
         "GROQ_MODEL",
         "https://api.groq.com/openai/v1",
-        "openai/gpt-oss-120b",
+        "qwen/qwen3.8-27b",
         "chat_completions",
     ),
 }
@@ -173,6 +173,11 @@ def _chat_completions(
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "Accept": "application/json",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/153.0.0.0 Safari/537.36"
+        ),
     }
 
     request = Request(
@@ -281,6 +286,10 @@ def chat(
 
     selected_model = (model or os.getenv(provider.model_env, provider.default_model)).strip()
     if not selected_model:
+        selected_model = provider.default_model
+
+    # Reject accidental UI/environment values that cannot be valid model IDs.
+    if any(char.isspace() for char in selected_model) or any(char in selected_model for char in "<>\"\\\\"):
         selected_model = provider.default_model
 
     system_prompt = os.getenv(
