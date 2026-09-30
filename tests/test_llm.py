@@ -7,49 +7,44 @@ from kd_agent.llm import LLMError, chat, default_provider, provider_status
 
 
 class LLMTests(unittest.TestCase):
-    def test_gemini_is_default(self):
+    def test_pateway_is_default(self):
         with patch.dict(os.environ, {}, clear=True):
-            self.assertEqual(default_provider(), "gemini")
+            self.assertEqual(default_provider(), "pateway")
 
-    def test_provider_status_has_only_gemini_and_groq(self):
+    def test_provider_status_only_has_pateway(self):
         with patch.dict(
             os.environ,
-            {"GEMINI_API_KEY": "super-secret", "AI_PROVIDER": "gemini"},
+            {"PATEWAY_API_KEY": "super-secret", "AI_PROVIDER": "pateway"},
             clear=True,
         ):
             status = provider_status()
 
-        self.assertEqual(status["default_provider"], "gemini")
+        self.assertEqual(status["default_provider"], "pateway")
         self.assertEqual(
             [item["id"] for item in status["providers"]],
-            ["gemini", "groq"],
+            ["pateway"],
         )
         self.assertTrue(status["providers"][0]["configured"])
         self.assertNotIn("super-secret", json.dumps(status))
 
-    def test_missing_gemini_key_is_reported(self):
-        with patch.dict(os.environ, {"AI_PROVIDER": "gemini"}, clear=True):
+    def test_missing_pateway_key_is_reported(self):
+        with patch.dict(os.environ, {"AI_PROVIDER": "pateway"}, clear=True):
             with self.assertRaises(LLMError):
                 chat("hello")
 
-    def test_invalid_provider_falls_back_to_gemini(self):
+    def test_invalid_provider_falls_back_to_pateway(self):
         with patch.dict(
             os.environ,
-            {"AI_PROVIDER": "invalid", "GEMINI_API_KEY": "x"},
+            {"AI_PROVIDER": "invalid", "PATEWAY_API_KEY": "x"},
             clear=True,
         ):
-            self.assertEqual(default_provider(), "gemini")
+            self.assertEqual(default_provider(), "pateway")
 
-    def test_gemini_request_shape_and_response(self):
+    def test_pateway_anthropic_messages_request_and_response(self):
         response_payload = {
-            "candidates": [
-                {
-                    "content": {
-                        "parts": [{"text": "Halo dari Gemini"}],
-                    }
-                }
-            ],
-            "usageMetadata": {"promptTokenCount": 3, "candidatesTokenCount": 4},
+            "content": [{"type": "text", "text": "Halo dari PatewayAI"}],
+            "model": "claude-sonnet-4-6",
+            "usage": {"input_tokens": 3, "output_tokens": 4},
         }
 
         class FakeResponse:
@@ -74,62 +69,62 @@ class LLMTests(unittest.TestCase):
         with patch.dict(
             os.environ,
             {
-                "AI_PROVIDER": "gemini",
-                "GEMINI_API_KEY": "test-key",
-                "GEMINI_MODEL": "gemini-2.5-flash",
+                "AI_PROVIDER": "pateway",
+                "PATEWAY_API_KEY": "test-key",
+                "PATEWAY_MODEL": "claude-sonnet-4-6",
+                "PATEWAY_MAX_TOKENS": "4096",
             },
             clear=True,
         ):
             with patch("kd_agent.llm.urlopen", fake_urlopen):
-                result = chat("hello", history=[{"role": "user", "content": "previous"}])
+                result = chat(
+                    "hello",
+                    history=[{"role": "user", "content": "previous"}],
+                )
 
-        self.assertEqual(result["provider"], "gemini")
-        self.assertEqual(result["content"], "Halo dari Gemini")
-        self.assertIn("/models/gemini-2.5-flash:generateContent", captured["url"])
-        self.assertEqual(captured["headers"]["X-goog-api-key"], "test-key")
-        self.assertEqual(captured["body"]["contents"][0]["role"], "user")
-        self.assertEqual(captured["body"]["contents"][1]["role"], "user")
-        self.assertIn("systemInstruction", captured["body"])
+        self.assertEqual(result["provider"], "pateway")
+        self.assertEqual(result["content"], "Halo dari PatewayAI")
+        self.assertTrue(captured["url"].endswith("/v1/messages"))
+        self.assertEqual(captured["headers"]["X-api-key"], "test-key")
+        self.assertEqual(captured["body"]["model"], "claude-sonnet-4-6")
+        self.assertEqual(captured["body"]["max_tokens"], 4096)
+        self.assertEqual(captured["body"]["messages"][0]["role"], "user")
+        self.assertEqual(captured["body"]["messages"][1]["role"], "user")
+        self.assertIn("system", captured["body"])
 
-    def test_groq_uses_browser_compatible_user_agent(self):
-        response_payload = {
-            "choices": [{"message": {"content": "Groq works"}}],
-            "model": "qwen/qwen3.8-27b",
-        }
-
-        class FakeResponse:
-            def __enter__(self):
-                return self
-
-            def __exit__(self, exc_type, exc, tb):
-                return False
-
-            def read(self):
-                return json.dumps(response_payload).encode("utf-8")
-
-        captured = {}
-
-        def fake_urlopen(request, timeout):
-            captured["headers"] = dict(request.headers)
-            captured["url"] = request.full_url
-            return FakeResponse()
-
+    def test_invalid_model_falls_back_to_default(self):
         with patch.dict(
             os.environ,
             {
-                "AI_PROVIDER": "groq",
-                "GROQ_API_KEY": "test-key",
-                "GROQ_MODEL": "qwen/qwen3.8-27b",
+                "AI_PROVIDER": "pateway",
+                "PATEWAY_API_KEY": "test-key",
+                "PATEWAY_MODEL": "claude-sonnet-4-6",
             },
             clear=True,
         ):
+            class FakeResponse:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, exc_type, exc, tb):
+                    return False
+
+                def read(self):
+                    return json.dumps(
+                        {
+                            "content": [{"type": "text", "text": "ok"}],
+                            "model": "claude-sonnet-4-6",
+                        }
+                    ).encode("utf-8")
+
+            def fake_urlopen(request, timeout):
+                body = json.loads(request.data.decode("utf-8"))
+                self.assertEqual(body["model"], "claude-sonnet-4-6")
+                return FakeResponse()
+
             with patch("kd_agent.llm.urlopen", fake_urlopen):
-                result = chat("hello")
-
-        self.assertEqual(result["content"], "Groq works")
-        self.assertIn("Chrome/", captured["headers"]["User-agent"])
-        self.assertTrue(captured["url"].endswith("/chat/completions"))
-
+                chat("hello", model="KD API")
+            
 
 if __name__ == "__main__":
     unittest.main()
