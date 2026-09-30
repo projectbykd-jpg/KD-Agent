@@ -12,16 +12,12 @@ GitHub Pages or the Render static panel hosts the public frontend. It does not s
 
 ## AI provider configuration
 
-Gemini is the primary provider:
+PatewayAI is the configured provider:
 
-    AI_PROVIDER=gemini
-    GEMINI_API_KEY=your-gemini-secret
-    GEMINI_MODEL=gemini-2.5-flash
-
-Groq remains available:
-
-    GROQ_API_KEY=your-groq-secret
-    GROQ_MODEL=qwen/qwen3.8-27b
+    AI_PROVIDER=pateway
+    PATEWAY_API_KEY=your-pateway-secret
+    PATEWAY_MODEL=claude-sonnet-4-6
+    PATEWAY_MAX_TOKENS=4096
 
 The panel calls `/api/v1/providers` to show whether each provider is configured. Secret values are never returned by that endpoint.
 
@@ -36,8 +32,8 @@ The panel calls `/api/v1/providers` to show whether each provider is configured.
 `POST /api/v1/chat` accepts:
 
     {
-      "provider": "gemini",
-      "model": "gemini-2.5-flash",
+      "provider": "pateway",
+      "model": "claude-sonnet-4-6",
       "prompt": "Bantu saya merancang fitur ini.",
       "history": []
     }
@@ -52,8 +48,7 @@ The backend sends provider requests server-side, so browser code never sees the 
           v
     KD Agent API (Render)
           |
-          +--> Google Gemini (primary)
-          +--> Groq (optional)
+          +--> PatewayAI
           |
           +--> Optional integration adapters
 
