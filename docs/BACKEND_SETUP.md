@@ -21,7 +21,7 @@ Gemini is the primary provider:
 Groq remains available:
 
     GROQ_API_KEY=your-groq-secret
-    GROQ_MODEL=openai/gpt-oss-120b
+    GROQ_MODEL=qwen/qwen3.8-27b
 
 The panel calls `/api/v1/providers` to show whether each provider is configured. Secret values are never returned by that endpoint.
 
