@@ -1,34 +1,29 @@
 # KD Agent backend setup
 
-GitHub Pages hosts the public frontend. It does not store provider secrets. Deploy the Python API as a Render Blueprint, then connect the generated backend URL from the panel's **Backend URL** field.
+GitHub Pages or the Render static panel hosts the public frontend. It does not store provider secrets. Deploy the Python API as a Render Blueprint and keep provider credentials in Render Environment.
 
 ## Deploy
 
 1. Sign in to Render.
 2. Create **New → Blueprint** and select `projectbykd-jpg/KD-Agent`.
 3. Render reads `render.yaml`, deploys `kd-agent-api`, and waits for `/api/v1/health`.
-4. In Render → **Environment**, add the provider secrets. Use the names below; never commit the secret values to Git.
-5. Copy the generated `https://…onrender.com` API URL and paste it into the panel's **Backend URL** field.
+4. In Render → **Environment**, add the provider secret. Never commit the secret value to Git.
+5. The panel uses the backend URL internally; there is no public Backend URL input.
 
 ## AI provider configuration
 
-OpenAI is the default provider:
+Gemini is the primary provider:
 
-    AI_PROVIDER=openai
-    OPENAI_API_KEY=your-openai-secret
-    OPENAI_MODEL=gpt-5.6
+    AI_PROVIDER=gemini
+    GEMINI_API_KEY=your-gemini-secret
+    GEMINI_MODEL=gemini-2.5-flash
 
-Add Groq:
+Groq remains available:
 
     GROQ_API_KEY=your-groq-secret
-    GROQ_MODEL=openai/gpt-oss-120b
+    GROQ_MODEL=qwen/qwen3.8-27b
 
-Add OpenRouter:
-
-    OPENROUTER_API_KEY=your-openrouter-secret
-    OPENROUTER_MODEL=openrouter/auto
-
-You can switch the provider in the top-right selector. The panel calls `/api/v1/providers` to show whether each provider is configured. Secret values are never returned by that endpoint.
+The panel calls `/api/v1/providers` to show whether each provider is configured. Secret values are never returned by that endpoint.
 
 ## API endpoints
 
@@ -41,29 +36,24 @@ You can switch the provider in the top-right selector. The panel calls `/api/v1/
 `POST /api/v1/chat` accepts:
 
     {
-      "provider": "openai",
-      "model": "gpt-5.6",
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
       "prompt": "Bantu saya merancang fitur ini.",
       "history": []
     }
 
-The backend sends the provider request server-side, so browser code never sees the API key.
+The backend sends provider requests server-side, so browser code never sees the API key.
 
-## Connector activation
+## Provider architecture
 
-The repository's other integrations remain disabled by default. Enable one only after its upstream software, licence, credentials, and runtime have been reviewed.
-
-## Architecture
-
-    GitHub Pages UI
+    Public panel
           |
           | HTTPS
           v
     KD Agent API (Render)
           |
-          +--> OpenAI
-          +--> Groq
-          +--> OpenRouter
+          +--> Google Gemini (primary)
+          +--> Groq (optional)
           |
           +--> Optional integration adapters
 

@@ -8,8 +8,8 @@ It does not vendor, fork, or silently install the projects listed below. Their l
 
 The current baseline provides:
 
-- a provider-neutral AI chat layer with OpenAI, Groq, and OpenRouter support;
-- a modern AI workspace UI with provider/model selection and backend connection settings;
+- a provider-neutral AI chat layer with Google Gemini as the primary provider and Groq as an optional provider;
+- a modern AI workspace UI with provider/model selection and backend connection status;
 - an integration registry covering all 15 requested projects;
 - deterministic task routing and dry-run plans;
 - environment-aware readiness reporting;
@@ -30,29 +30,21 @@ py -m kd_agent.cli serve
 
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in a browser. The panel is intentionally local-only by default and is a safe planning interface: it creates inspectable plans but will not call third-party services or execute tools yet.
 
-If the `py` launcher is not available on Windows, use the installed Python executable directly:
-
-```powershell
-& "C:\Users\lacos\AppData\Local\Programs\Python\Python313\python.exe" -m kd_agent.cli serve
-```
-
 ## Public GitHub Pages panel
 
 The repository publishes a static, privacy-preserving planning panel to GitHub Pages through `.github/workflows/deploy-pages.yml`. After the deployment workflow completes, it is available at:
 
 `https://projectbykd-jpg.github.io/KD-Agent/`
 
-The public panel includes active links for all 15 upstream projects and can make plans locally in the browser. GitHub Pages cannot securely host API keys or run Python adapters, so it is not the execution backend. The production architecture is:
+The public panel never contains provider API keys. The production architecture is:
 
 ```text
-GitHub Pages (public UI) -> authenticated API/backend -> approved integration adapters -> upstream services
+GitHub Pages / Render static panel -> KD Agent API -> Gemini or Groq
 ```
-
-Every upstream project is catalogued and routed by capability. Before an adapter is enabled in production, review its licence, deployment requirements, and credentials; the page itself never treats a repository link as an installed or authorized integration.
 
 ## Deploy the private backend
 
-`render.yaml` deploys the API as a Render Blueprint. The backend keeps credentials off GitHub Pages and exposes health/readiness endpoints:
+`render.yaml` deploys the API as a Render Blueprint. The backend keeps credentials off the frontend and exposes:
 
 ```text
 GET /api/v1/health
@@ -62,7 +54,7 @@ POST /api/v1/plan
 POST /api/v1/chat
 ```
 
-Use [docs/BACKEND_SETUP.md](docs/BACKEND_SETUP.md) for the deployment and connector-activation guide.
+Use [docs/BACKEND_SETUP.md](docs/BACKEND_SETUP.md) for deployment and provider configuration.
 
 ## Architecture
 
@@ -89,11 +81,26 @@ Detailed upstream URLs live in `kd_agent/registry.py` so there is one auditable 
 
 ## AI providers
 
-Set the primary provider with `AI_PROVIDER=openai`. The backend supports OpenAI (`gpt-5.6` by default), Groq (`openai/gpt-oss-120b` by default), and OpenRouter (`openrouter/auto` by default). Keep all API keys in the backend environment; never commit them to GitHub or expose them in the public panel.
+Gemini is the default provider:
+
+```text
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your-gemini-secret
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Groq remains available:
+
+```text
+GROQ_API_KEY=your-groq-secret
+GROQ_MODEL=qwen/qwen3.8-27b
+```
+
+Keep all API keys in the backend environment; never commit them to GitHub or expose them in the public panel.
 
 ## Configuration
 
-Copy `.env.example` into `.env` only when you enable integrations that need credentials. Keep secrets out of source control. The initial registry marks all integrations as disabled by default, which is intentional: credentials alone must not give the agent permission to take action.
+Copy `.env.example` into `.env` only when you enable integrations that need credentials. Keep secrets out of source control. The initial registry marks all integrations as disabled by default.
 
 ## Next implementation decision
 
