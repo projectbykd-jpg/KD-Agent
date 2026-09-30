@@ -136,11 +136,23 @@ class KDWebHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _cors_headers(self) -> None:
+        # Keep production clients working even if Render's optional env var
+        # is missing or stale. Extra origins can still be supplied via env.
+        production_origins = {
+            "https://projectbykd-jpg.github.io",
+            "https://kd-agent-panel.onrender.com",
+        }
+        local_origins = {
+            "http://localhost:3000",
+            "http://localhost:8000",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:8000",
+        }
         configured_origins = (
             os.getenv("KD_AGENT_ALLOWED_ORIGINS")
             or os.getenv("KD_AGENT_ALLOWED_ORIGIN", "")
         )
-        allowed_origins = {
+        allowed_origins = production_origins | local_origins | {
             value.strip().rstrip("/")
             for value in configured_origins.replace("\n", ",").split(",")
             if value.strip()
@@ -149,6 +161,9 @@ class KDWebHandler(BaseHTTPRequestHandler):
         if request_origin and request_origin in allowed_origins:
             self.send_header("Access-Control-Allow-Origin", request_origin)
             self.send_header("Vary", "Origin")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization")
+        self.send_header("Access-Control-Max-Age", "600")
 
     def log_message(self, format: str, *args: object) -> None:
         return
