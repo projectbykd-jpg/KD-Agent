@@ -319,7 +319,7 @@ async function loadProviders() {
   } catch (error) {
     providers = [
       {id:"gemini", name:"Google Gemini", configured:false, model:"gemini-2.5-flash"},
-      {id:"groq", name:"Groq", configured:false, model:"openai/gpt-oss-120b"}
+      {id:"groq", name:"Groq", configured:false, model:"qwen/qwen3.8-27b"}
     ];
     renderProviders();
     setConnection(false, "Backend offline", error.message);
